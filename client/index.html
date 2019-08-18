@@ -1,0 +1,52 @@
+<html>
+  <body>
+    <style>
+      #outgoing {
+        width: 600px;
+        word-wrap: break-word;
+        white-space: normal;
+      }
+    </style>
+    <video id="remoteVideo"></video>
+    <pre id="outgoing"></pre>
+    <script src="simplepeer.min.js"></script>
+    <script>
+      // get video/voice stream
+      function pageReady() {
+        serverConnection = new WebSocket('wss://' + window.location.hostname + ':8443');
+        serverConnection.onmessage = gotMessageFromServer;
+        serverConnection.onopen = () => {
+          console.log('websocket established');
+          start();
+        };
+      }
+
+      function start() {
+        peer = new SimplePeer();
+        peer.on('signal', message => {
+          const data = JSON.stringify(message);
+          console.log('SIGNAL-OUT', message);
+          serverConnection.send(data);
+        })
+        peer.on('stream', stream => {
+          // got remote video stream, now let's show it in a video tag
+          var video = document.getElementById('remoteVideo');
+          video.oncanplay = () => video.play();
+
+          if ('srcObject' in video) {
+            video.srcObject = stream;
+          } else {
+            video.src = window.URL.createObjectURL(stream) // for older browsers
+          }
+        })
+      }
+
+      function gotMessageFromServer(message) {
+        const data = JSON.parse(message.data);
+        console.log('SIGNAL-IN', data);
+        peer.signal(data);
+      }
+      pageReady();
+    </script>
+  </body>
+</html>
