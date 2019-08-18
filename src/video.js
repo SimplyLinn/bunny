@@ -2,7 +2,7 @@ const { RTCVideoSource, RTCVideoSink } = require('wrtc').nonstandard;
 const { MediaStream } = require('wrtc');
 const FfmpegCommand = require('fluent-ffmpeg');
 const { Writable } = require('stream');
-
+const browserStream = require('./browserStream');
 
 class Yuv420pParser extends Writable {
   /**
@@ -68,7 +68,7 @@ module.exports = () => {
     yuv420p.onClose = () => {
       track.stop();
     };
-    const command = new FfmpegCommand();
+    /*const command = new FfmpegCommand();
     console.log(command
       .input(':100')
       .inputFormat('x11grab')
@@ -81,7 +81,12 @@ module.exports = () => {
         options: 'yuv420p'
       })
       .output(yuv420p));
-    command.run();
+    command.run();*/
+    browserStream(width, height, 16)
+    .then(({audio, video}) => {
+      console.log('video')
+      video.pipe(yuv420p);
+    });
 
     return { stream: new MediaStream([track]) };
 };

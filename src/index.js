@@ -49,7 +49,6 @@ wss.on('connection', function(ws) {
   peers.push(peer);
   peer.on('signal', message => {
     const data = JSON.stringify(message);
-    console.log('INTERNAL-SIGNAL', message);
     ws.send(data);
   });
   peer.on('connect', () => {
@@ -57,7 +56,6 @@ wss.on('connection', function(ws) {
   });
   ws.on('message', function(message) {
     // Broadcast any received message to all clients
-    console.log('received: %s', message);
     peer.signal(JSON.parse(message));
   });
 });
