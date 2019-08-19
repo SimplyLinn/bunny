@@ -60,7 +60,7 @@ module.exports = () => {
     const height = 1080;
     const frame = { width, height};
 
-    const yuv420p = new Yuv420pParser(width * height * 1.5, 2);
+    const yuv420p = new Yuv420pParser(width * height * 1.5, 4);
     yuv420p.onFrame = (data) => {
       frame.data = data;
       source.onFrame(frame);

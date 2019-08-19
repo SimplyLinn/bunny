@@ -63,7 +63,7 @@ function getBrowserStream(width=1920, height=1080, cd=24) {
 
       const chromeCmd = [
         'sh', '-c',
-        'DISPLAY=:100 google-chrome -start-maximized --no-sandbox https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+        `DISPLAY=:100 google-chrome --window-position=0,0 --window-size=${width},${height} --no-sandbox https://www.youtube.com/watch?v=dQw4w9WgXcQ`
       ];
       console.log(chromeCmd.join(' '));
       container.exec.create({
