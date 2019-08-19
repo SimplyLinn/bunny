@@ -7,6 +7,7 @@ RUN apt-get update && \
   apt-get clean \
   && apt-get -y install \
     xvfb \
+    xdotool \
   && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
 #========================
@@ -20,7 +21,8 @@ RUN apt-get update && \
     wget \
     libgconf-2-4 \
     ffmpeg \
-    gnupg2
+    gnupg2 \
+    netcat
 
 #========================================
 # Add normal user with passwordless sudo

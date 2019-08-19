@@ -83,9 +83,10 @@ module.exports = () => {
       .output(yuv420p));
     command.run();*/
     browserStream(width, height, 16)
-    .then(({audio, video}) => {
+    .then(({audio, video, xdotool}) => {
       console.log('video')
       video.pipe(yuv420p);
+      process.stdin.pipe(xdotool);
     });
 
     return { stream: new MediaStream([track]) };
