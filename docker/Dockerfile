@@ -22,7 +22,8 @@ RUN apt-get update && \
     libgconf-2-4 \
     ffmpeg \
     gnupg2 \
-    netcat
+    netcat \
+    iputils-ping
 
 #========================================
 # Add normal user with passwordless sudo
@@ -35,9 +36,11 @@ USER root
 #============================================
 # Google Chrome
 #============================================
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && echo "deb http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
-    && apt-get update && apt-get -y install google-chrome-stable
+#RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
+#    && echo "deb http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
+#    && apt-get update && apt-get -y install google-chrome-stable
+
+RUN apt-get update && apt-get install -y firefox
 
 #=================================
 # Chrome Launch Script Modication
