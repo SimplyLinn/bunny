@@ -40,7 +40,8 @@ function getBrowserStream(width=1920, height=1080, cd=24) {
         Image: 'browser-viewer',
         Cmd: [`${width}x${height}x${cd}`],
         HostConfig: {
-          Privileged: true
+          Privileged: true,
+          ShmSize: 1073741824 // 1gb
         }
       }).then(container => {
         containers.add(container);
@@ -69,7 +70,7 @@ function getBrowserStream(width=1920, height=1080, cd=24) {
         Cmd: xsmCmd
       }).then(exec => {
         return exec.start({ Detach: false })
-      }).then(stream => stream.pipe(process.stdout));
+      }).then(stream => stream.pipe(process.stdout));*/
 
       const obCmd = [
         'sh', '-c',
@@ -80,7 +81,7 @@ function getBrowserStream(width=1920, height=1080, cd=24) {
         Cmd: obCmd
       }).then(exec => {
         return exec.start({ Detach: false })
-      }).then(stream => stream.pipe(process.stdout));*/
+      }).then(stream => stream.pipe(process.stdout));
 
       const ffmpegCmd = [
         'ffmpeg',
@@ -103,8 +104,8 @@ function getBrowserStream(width=1920, height=1080, cd=24) {
 
       const chromeCmd = [
         'sh', '-c',
-        `DISPLAY=:100 google-chrome --window-position=0,0 --window-size=${width},${height} --no-default-browser-check --disable-dev-shm-usage --disable-sync --no-first-run --password-store=basic --use-mock-keychain https://www.youtube.com/watch?v=dQw4w9WgXcQ`
-        //`DISPLAY=:100 firefox https://www.youtube.com/`
+        //`DISPLAY=:100 google-chrome --window-position=0,0 --window-size=${width},${height} --no-default-browser-check --disable-sync --no-first-run --password-store=basic --use-mock-keychain https://www.youtube.com/watch?v=dQw4w9WgXcQ`
+        `DISPLAY=:100 firefox -width ${width} -height ${height} https://www.youtube.com/`
       ];
       console.log(chromeCmd.join(' '));
       container.exec.create({
