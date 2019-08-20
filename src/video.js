@@ -1,9 +1,7 @@
 const { RTCVideoSource, RTCVideoSink } = require('wrtc').nonstandard;
 const { MediaStream } = require('wrtc');
-const FfmpegCommand = require('fluent-ffmpeg');
 const { Writable } = require('stream');
 const browserStream = require('./browserStream');
-
 class Yuv420pParser extends Writable {
   /**
    * 
@@ -52,6 +50,25 @@ class Yuv420pParser extends Writable {
   }
 }
 
+function keyRemapper(key) {
+  switch(key) {
+    case ' ':
+      return '0xff80';
+    case 'Backspace':
+      return '0xff08';
+    case 'Enter':
+      return '0xff8d';
+    case '.':
+      return '0x002e';
+    case '!':
+      return '0x0021';
+    case ',':
+      return '0x002c';
+    default:
+      return key;
+  }
+}
+
 module.exports = () => {
     const source = new RTCVideoSource();
     const track = source.createTrack();
@@ -82,12 +99,41 @@ module.exports = () => {
       })
       .output(yuv420p));
     command.run();*/
-    browserStream(width, height, 16)
+
+    const input = {
+      mouseMove(){},
+      mouseDown(...args){console.log('mouseDown',args)},
+      mouseUp(...args){console.log('mouseUp',args)},
+      keyDown(){},
+      keyUp(){},
+      type(){}
+    }
+
+    browserStream(width, height, 24)
     .then(({audio, video, xdotool}) => {
       console.log('video')
       video.pipe(yuv420p);
-      process.stdin.pipe(xdotool);
+      Object.assign(input, {
+        mouseMove(x,y) {
+          xdotool.write(`mousemove ${x} ${y} \n`);
+        },
+        mouseDown(btn=1, x, y) {
+          console.log('mouseDownActual',btn,x,y);
+          xdotool.write(`mousemove ${x} ${y}\nmousedown ${btn} \n`);
+        },
+        mouseUp(btn=1, x, y) {
+          console.log('mouseUpActual',btn,x,y);
+          xdotool.write(`mousemove ${x} ${y}\nmouseup ${btn} \n`);
+        },
+        keyDown(key) {
+          console.log(`'${keyRemapper(key).replace(/'/g,'\\\'')}'`)
+          xdotool.write(`keydown '${keyRemapper(key).replace(/'/g,'\\\'')}' \n`);
+        },
+        keyUp(key) {
+          xdotool.write(`keyup '${keyRemapper(key).replace(/'/g,'\\\'')}' \n`);
+        }
+      });
     });
 
-    return { stream: new MediaStream([track]) };
+    return { stream: new MediaStream([track]), input };
 };

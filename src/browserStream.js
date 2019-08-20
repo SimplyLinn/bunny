@@ -1,10 +1,8 @@
 const {Docker} = require('node-docker-api');
 const net = require('net');
+const { host } = require('../config');
  
-const docker = new Docker({ socketPath: '/var/run/docker.sock' });
-function getLocalIp() {
-  return docker.network.get('bridge').status().then(n=>n.data.IPAM.Config[0].Gateway);
-}
+const docker = new Docker({ socketPath: '//./pipe/docker_engine' });
 
 const containers = new Set;
 
@@ -25,7 +23,6 @@ process.on('SIGINT', gracefulShutdown);
 function getBrowserStream(width=1920, height=1080, cd=24) {
   return new Promise(async (resolve, reject) => {
     retObj = {video: null, audio: null, xdotool: null};
-    const ip = await getLocalIp();
     const vidServer = net.createServer(c=>{
       retObj.video = c;
       if(retObj.xdotool) resolve(retObj);
@@ -40,12 +37,47 @@ function getBrowserStream(width=1920, height=1080, cd=24) {
     vidServer.listen(0, async ()=>{
       console.log('Getting stream');
       const container = await docker.container.create({
-        Image: 'chrome-viewer',
+        Image: 'browser-viewer',
         Cmd: [`${width}x${height}x${cd}`]
       }).then(container => {
         containers.add(container);
         return container.start();
       });
+
+      const dbusCmd = [
+        'sudo',
+        'dbus-daemon',
+        '--config-file=/usr/share/dbus-1/system.conf'
+      ];
+      console.log(dbusCmd.join(' '));
+      container.exec.create({
+        Cmd: dbusCmd
+      }).then(exec => {
+        return exec.start({ Detach: false })
+      }).then(stream => stream.pipe(process.stdout));
+
+      const xsmCmd = [
+        'sudo',
+        'xsm',
+        '-display', ':100'
+      ];
+      console.log(xsmCmd.join(' '));
+      container.exec.create({
+        Cmd: xsmCmd
+      }).then(exec => {
+        return exec.start({ Detach: false })
+      }).then(stream => stream.pipe(process.stdout));
+
+      const obCmd = [
+        'sh', '-c',
+        'DISPLAY=:100 openbox --replace'
+      ];
+      console.log(obCmd.join(' '));
+      container.exec.create({
+        Cmd: obCmd
+      }).then(exec => {
+        return exec.start({ Detach: false })
+      }).then(stream => stream.pipe(process.stdout));
 
       const ffmpegCmd = [
         'ffmpeg',
@@ -53,10 +85,11 @@ function getBrowserStream(width=1920, height=1080, cd=24) {
         '-r', '30',
         '-f', 'x11grab',
         '-s', `${width}x${height}`,
+        '-draw_mouse', '1',
         '-i', ':100',
         '-f', 'rawvideo',
         '-vf', 'format=yuv420p',
-        `tcp://docker.for.mac.localhost:${vidServer.address().port}`
+        `tcp://${host}:${vidServer.address().port}`
       ];
       console.log(ffmpegCmd.join(' '));
       container.exec.create({
@@ -67,8 +100,8 @@ function getBrowserStream(width=1920, height=1080, cd=24) {
 
       const chromeCmd = [
         'sh', '-c',
-        `DISPLAY=:100 firefox https://www.youtube.com/watch?v=dQw4w9WgXcQ`
-        //`DISPLAY=:100 google-chrome --window-position=0,0 --window-size=${width},${height} --no-sandbox https://www.youtube.com/watch?v=dQw4w9WgXcQ`
+        `DISPLAY=:100 google-chrome --no-sandbox --disable-features=VizDisplayCompositor https://www.youtube.com/watch?v=dQw4w9WgXcQ`
+        //`DISPLAY=:100 firefox https://www.youtube.com/`
       ];
       console.log(chromeCmd.join(' '));
       container.exec.create({
@@ -84,7 +117,7 @@ function getBrowserStream(width=1920, height=1080, cd=24) {
 
       const xdotoolCmd = [
         'sh', '-c',
-        `DISPLAY=:100 nc docker.for.mac.localhost ${cmdServer.address().port} | xdotool -`
+        `DISPLAY=:100 nc ${host} ${cmdServer.address().port} | xdotool -`
       ];
       console.log(xdotoolCmd.join(' '));
       container.exec.create({

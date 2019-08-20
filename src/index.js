@@ -43,20 +43,24 @@ const wss = new WebSocketServer({server: httpsServer});
 
 const peers = [];
 
-const { stream } = createTrack();
+const { stream, input } = createTrack();
 wss.on('connection', function(ws) {
   const peer = new Peer({ wrtc: wrtc, initiator: true });
+  peer.on('data', msg => {
+    const data = JSON.parse(msg);
+    input[data.input](...(data.args||[]))
+  });
   peers.push(peer);
-  peer.on('signal', message => {
-    const data = JSON.stringify(message);
+  peer.on('signal', signal => {
+    const data = JSON.stringify({signal});
     ws.send(data);
   });
   peer.on('connect', () => {
     peer.addStream(stream)
   });
   ws.on('message', function(message) {
-    // Broadcast any received message to all clients
-    peer.signal(JSON.parse(message));
+    const data = JSON.parse(message);
+    if(data.signal) return peer.signal(data.signal);
   });
 });
 
