@@ -39,6 +39,9 @@ function getBrowserStream(width=1920, height=1080, cd=24) {
       const container = await docker.container.create({
         Image: 'browser-viewer',
         Cmd: [`${width}x${height}x${cd}`],
+        Env: [
+          "DISPLAY=:100"
+        ],
         HostConfig: {
           Privileged: true,
           ShmSize: 1073741824 // 1gb
@@ -73,8 +76,7 @@ function getBrowserStream(width=1920, height=1080, cd=24) {
       }).then(stream => stream.pipe(process.stdout));*/
 
       const obCmd = [
-        'sh', '-c',
-        'DISPLAY=:100 openbox --replace'
+        'openbox'
       ];
       console.log(obCmd.join(' '));
       container.exec.create({
@@ -102,19 +104,28 @@ function getBrowserStream(width=1920, height=1080, cd=24) {
         return exec.start()
       });
 
-      const chromeCmd = [
-        'sh', '-c',
-        //`DISPLAY=:100 google-chrome --window-position=0,0 --window-size=${width},${height} --no-default-browser-check --disable-sync --no-first-run --password-store=basic --use-mock-keychain https://www.youtube.com/watch?v=dQw4w9WgXcQ`
-        `DISPLAY=:100 firefox -width ${width} -height ${height} https://www.youtube.com/`
+      /*const browserCmd = [
+        'google-chrome',
+        '--window-position=0,0',
+        `--window-size=${width},${height}`,
+        '--no-default-browser-check',
+        '--disable-sync',
+        '--no-first-run',
+        '--password-store=basic',
+        '--use-mock-keychain',
+        'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+      ];*/
+      const browserCmd = [
+        'firefox',
+        '-width', String(width),
+        '-height', String(height),
+        'https://www.youtube.com/'
       ];
-      console.log(chromeCmd.join(' '));
+      console.log(browserCmd.join(' '));
       container.exec.create({
         AttachStdout: true,
         AttachStderr: true,
-        Cmd: chromeCmd,
-        Env: [
-          'DISPLAY=:100'
-        ]
+        Cmd: browserCmd
       }).then(exec => {
         return exec.start({ Detach: false })
       }).then(stream => stream.pipe(process.stdout));
@@ -127,10 +138,7 @@ function getBrowserStream(width=1920, height=1080, cd=24) {
       container.exec.create({
         AttachStdout: true,
         AttachStderr: true,
-        Cmd: xdotoolCmd,
-        Env: [
-          'DISPLAY=:100'
-        ]
+        Cmd: xdotoolCmd
       }).then(exec => {
         return exec.start({ Detach: false })
       }).then(stream => stream.pipe(process.stdout));
