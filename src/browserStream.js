@@ -1,8 +1,8 @@
 const {Docker} = require('node-docker-api');
 const net = require('net');
-const { host } = require('../config');
+const { host, dockerConf } = require('../config');
  
-const docker = new Docker({ socketPath: '//./pipe/docker_engine' });
+const docker = new Docker(dockerConf);
 
 const containers = new Set;
 
@@ -38,13 +38,16 @@ function getBrowserStream(width=1920, height=1080, cd=24) {
       console.log('Getting stream');
       const container = await docker.container.create({
         Image: 'browser-viewer',
-        Cmd: [`${width}x${height}x${cd}`]
+        Cmd: [`${width}x${height}x${cd}`],
+        HostConfig: {
+          Privileged: true
+        }
       }).then(container => {
         containers.add(container);
         return container.start();
       });
 
-      const dbusCmd = [
+      /*const dbusCmd = [
         'sudo',
         'dbus-daemon',
         '--config-file=/usr/share/dbus-1/system.conf'
@@ -77,7 +80,7 @@ function getBrowserStream(width=1920, height=1080, cd=24) {
         Cmd: obCmd
       }).then(exec => {
         return exec.start({ Detach: false })
-      }).then(stream => stream.pipe(process.stdout));
+      }).then(stream => stream.pipe(process.stdout));*/
 
       const ffmpegCmd = [
         'ffmpeg',
@@ -100,7 +103,7 @@ function getBrowserStream(width=1920, height=1080, cd=24) {
 
       const chromeCmd = [
         'sh', '-c',
-        `DISPLAY=:100 google-chrome --no-sandbox --disable-features=VizDisplayCompositor https://www.youtube.com/watch?v=dQw4w9WgXcQ`
+        `DISPLAY=:100 google-chrome --window-position=0,0 --window-size=${width},${height} --no-default-browser-check --disable-dev-shm-usage --disable-sync --no-first-run --password-store=basic --use-mock-keychain https://www.youtube.com/watch?v=dQw4w9WgXcQ`
         //`DISPLAY=:100 firefox https://www.youtube.com/`
       ];
       console.log(chromeCmd.join(' '));
