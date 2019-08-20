@@ -1,7 +1,7 @@
 const { RTCVideoSource } = require('wrtc').nonstandard;
 const { MediaStream } = require('wrtc');
 const FfmpegCommand = require('fluent-ffmpeg');
-const { spawn } = require('child_process');
+const { spawn, exec } = require('child_process');
 
 const Yuv420pParser = require('./yuv420pParser');
 
@@ -85,10 +85,35 @@ function xdotool(env) {
   return spawn('xdotool', args, opts);
 }
 
+function dbus(env) {
+  const args = [
+    'dbus-daemon',
+    '--nofork',
+    '--config-file=/usr/share/dbus-1/system.conf'
+  ];
+  const opts = {
+    env,
+    stdio: [
+      'ignore',
+      'inherit',
+      'inherit'
+    ]
+  };
+  return spawn('sudo', args, opts);
+}
 
+function pulseaudio(env) {
+  return pa = exec('export DISPLAY=:100; ls -l; ./pulseaudio.sh', (err, stdout, stderr) => {
+    console.log(stdout);
+    console.error(stderr);
+    if(err) console.error(err);
+  });
+}
 
 function init() {
+  dbus(this.env);
   xvfb(this.env, this.width, this.height, this.bitDepth);
+  pulseaudio(this.env);
   openbox(this.env);
   firefox(this.env, this.width, this.height);
   this.xdoin = xdotool(this.env).stdin;

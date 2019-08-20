@@ -42,17 +42,14 @@ USER root
 #============================================
 # Browsers
 #============================================
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && echo "deb http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
-    && apt-get update && apt-get -y install google-chrome-stable firefox-esr
+RUN apt-get update && apt-get -y install firefox-esr
 
 RUN mkdir -p /var/run/dbus
 
 #=================================
-# Chrome Launch Script Modication
+# Audio
 #=================================
-#COPY chrome_launcher.sh /opt/google/chrome/google-chrome
-#RUN chmod 755 /opt/google/chrome/google-chrome
+RUN apt-get update && apt-get -y install pulseaudio socat alsa-utils
 
 USER viewer
 
@@ -60,9 +57,12 @@ RUN mkdir ~/renderServer
 
 WORKDIR /home/viewer/renderServer
 
-
 COPY package.json package-lock.json ./
 RUN npm ci
+COPY pulseaudio.sh ./pulseaudio.sh
 COPY src/ ./src
-
+USER root
+RUN chown -R viewer:viewer .
+USER viewer
+RUN ls -la
 ENTRYPOINT [ "npm", "start", "--" ]
