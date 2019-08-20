@@ -1,4 +1,4 @@
-FROM ubuntu:bionic
+FROM node:dubnium-stretch-slim
 
 #==============
 # VNC and Xvfb
@@ -44,7 +44,7 @@ USER root
 #============================================
 RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
     && echo "deb http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
-    && apt-get update && apt-get -y install google-chrome-stable firefox
+    && apt-get update && apt-get -y install google-chrome-stable firefox-esr
 
 RUN mkdir -p /var/run/dbus
 
@@ -56,10 +56,13 @@ RUN mkdir -p /var/run/dbus
 
 USER viewer
 
-WORKDIR /home/viewer
+RUN mkdir ~/renderServer
 
-RUN echo "INSTALLED VERSIONS" \
-  && apt-cache policy google-chrome-stable | grep Installed | sed -e "s/Installed/Chrome/"
+WORKDIR /home/viewer/renderServer
 
-ENTRYPOINT [ "sudo", "/usr/bin/Xvfb", ":100", "-ac", "-listen", "tcp", "-screen", "0" ]
-CMD [ "1920x1080x24" ]
+
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY src/ ./src
+
+ENTRYPOINT [ "npm", "start", "--" ]

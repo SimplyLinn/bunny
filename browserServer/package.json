@@ -5,7 +5,7 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node .",
-    "dev": "docker build -t browser-server . && docker run --shm-size=\"1gb\" browser-server -s \"ws://10.0.75.1\"",
+    "dev": "docker build -t browser-server . && docker run --rm -it --net=host --shm-size=\"1gb\" browser-server -s \"wss://10.0.75.1:8443\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -19,7 +19,10 @@
   },
   "homepage": "https://github.com/SimplyLinn/bunny#readme",
   "dependencies": {
-    "uuid": "^3.3.3",
+    "argv-parse": "^1.0.1",
+    "fluent-ffmpeg": "^2.1.2",
+    "simple-peer": "^9.5.0",
+    "wrtc": "^0.4.1",
     "ws": "^7.1.2"
   },
   "devDependencies": {

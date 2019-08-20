@@ -1,12 +1,10 @@
-var Peer = require('simple-peer')
-var wrtc = require('wrtc');
-const createTrack = require('./video');
-
 const HTTPS_PORT = 8443;
 
 const fs = require('fs');
 const https = require('https');
 const WebSocket = require('ws');
+const uuidv4 = require('uuid/v4');
+
 const WebSocketServer = WebSocket.Server;
 
 // Yes, TLS is required
@@ -41,26 +39,26 @@ httpsServer.listen(HTTPS_PORT, '0.0.0.0');
 // Create a server for handling websocket calls
 const wss = new WebSocketServer({server: httpsServer});
 
-const peers = [];
+const clients = new Map();
 
-const { stream, input } = createTrack();
 wss.on('connection', function(ws) {
-  const peer = new Peer({ wrtc: wrtc, initiator: true });
-  peer.on('data', msg => {
-    const data = JSON.parse(msg);
-    input[data.input](...(data.args||[]))
-  });
-  peers.push(peer);
-  peer.on('signal', signal => {
-    const data = JSON.stringify({signal});
-    ws.send(data);
-  });
-  peer.on('connect', () => {
-    peer.addStream(stream)
-  });
+  const uuid = uuidv4();
+  console.log('Client connected, assigning uuid:', uuid);
+  clients.forEach(client=>client.send(JSON.stringify({
+    type: 'announce',
+    cid: uuid
+  })));
+  clients.set(uuid, ws);
   ws.on('message', function(message) {
-    const data = JSON.parse(message);
-    if(data.signal) return peer.signal(data.signal);
+    const msg = JSON.parse(message);
+    const target = msg.target;
+    delete msg.target;
+    msg.cid = uuid;
+    clients.get(target).send(JSON.stringify(msg));
+  });
+  ws.on('close', function() {
+    console.log('Closing connection to', uuid);
+    clients.delete(uuid);
   });
 });
 

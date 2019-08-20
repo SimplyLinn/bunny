@@ -17,7 +17,6 @@
         serverConnection.onmessage = gotMessageFromServer;
         serverConnection.onopen = () => {
           console.log('websocket established');
-          start();
         };
       }
       function send(obj) {
@@ -34,7 +33,7 @@
         const rect = video.getBoundingClientRect();
         x = e.clientX - rect.left;
         y = e.clientY - rect.top;
-        peer.write(JSON.stringify({input:'mouseDown', args: [e.button+1, x, y]}));
+        peer.write(JSON.stringify({input:'mouseDown', args: [x, y, e.button+1]}));
         e.preventDefault();
         e.stopPropagation();
       });
@@ -43,7 +42,7 @@
         const rect = video.getBoundingClientRect();
         x = e.clientX - rect.left;
         y = e.clientY - rect.top;
-        peer.write(JSON.stringify({input:'mouseUp', args: [e.button+1, x, y]}));
+        peer.write(JSON.stringify({input:'mouseUp', args: [x, y, e.button+1]}));
         e.preventDefault();
         e.stopPropagation();
       });
@@ -79,13 +78,25 @@
         peer.write(JSON.stringify({input:'keyUp', args: [e.key]}));
       });
 
-      function start() {
-        peer = new SimplePeer();
-        peer.on('signal', signal => {
-          signal = {signal};
-          send(signal);
-        })
-        peer.on('stream', stream => {
+      peer = {write(){}};
+      peers = new Map;
+      function createPeer(msg, initiator) {
+        const newPeer = new SimplePeer({ initiator });
+        newPeer.cid = msg.cid;
+        peers.set(newPeer.cid, newPeer);
+        newPeer.on('error', (err) => {
+          console.log('PEER ERROR', err);
+        });
+        newPeer.on('close', () => peers.delete(newPeer.cid));
+        newPeer.on('signal', signal => {
+          send({
+            type: 'signal',
+            target: newPeer.cid,
+            signal
+          });
+        });
+        newPeer.on('stream', stream => {
+          peer = newPeer;
           // got remote video stream, now let's show it in a video tag
           if ('srcObject' in video) {
             video.srcObject = stream;
@@ -93,13 +104,24 @@
             video.src = window.URL.createObjectURL(stream) // for older browsers
           }
         })
+        return newPeer;
+      }
+
+      function processSignal(data) {
+        if(peers.has(data.cid)) return peers.get(data.cid).signal(data.signal);
+        const newPeer = createPeer(data, false);
+        newPeer.signal(data.signal);
       }
 
       function gotMessageFromServer(message) {
         const data = JSON.parse(message.data);
         console.log('WS-IN', data);
-        if(data.signal) {
-          peer.signal(data.signal);
+        switch (data.type) {
+          case 'announce':
+            createPeer(data, true);
+            break;
+          case 'signal':
+            processSignal(data)
         }
       }
       pageReady();
