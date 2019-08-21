@@ -1,9 +1,10 @@
-const { RTCVideoSource } = require('wrtc').nonstandard;
+const { RTCVideoSource, RTCAudioSource } = require('wrtc').nonstandard;
 const { MediaStream } = require('wrtc');
 const FfmpegCommand = require('fluent-ffmpeg');
 const { spawn, exec } = require('child_process');
 
 const Yuv420pParser = require('./yuv420pParser');
+const AudioParser = require('./audioParser');
 
 function keyRemapper(key) {
   switch(key) {
@@ -103,11 +104,57 @@ function dbus(env) {
 }
 
 function pulseaudio(env) {
-  return pa = exec('export DISPLAY=:100; ls -l; ./pulseaudio.sh', (err, stdout, stderr) => {
+  return pa = exec('DISPLAY=:100 start-pulseaudio', (err, stdout, stderr) => {
     console.log(stdout);
     console.error(stderr);
     if(err) console.error(err);
   });
+}
+
+function ffmpeg(env, width, height) {
+  const vidArgs = [
+    '-s', `${width}x${height}`,
+    '-r', '30',
+    '-f', 'x11grab',
+    '-i', env.DISPLAY,
+
+    '-vf', 'format=yuv420p',
+    '-f', 'rawvideo',
+    '-an',
+    'pipe:1'
+  ];
+  
+  const audArgs = [
+    '-f', 'pulse',
+    '-ac', '2',
+    '-i', 'default',
+
+    '-f', 's16le',
+    '-vn',
+    '-af', 'aresample=async=1',
+    '-ac', '2',
+    '-r', '48000',
+    'pipe:1'
+  ];
+  const vidOpts = {
+    env,
+    stdio: [
+      'ignore',
+      'pipe',
+      'inherit',
+    ]
+  };
+  const audOpts = {
+    env,
+    stdio: [
+      'ignore',
+      'pipe',
+      'ignore',
+    ]
+  };
+  const vidPipe = spawn('ffmpeg', vidArgs, vidOpts).stdout;
+  const audPipe = spawn('ffmpeg', audArgs, audOpts).stdout;
+  return [vidPipe, audPipe];
 }
 
 function init() {
@@ -117,20 +164,30 @@ function init() {
   openbox(this.env);
   firefox(this.env, this.width, this.height);
   this.xdoin = xdotool(this.env).stdin;
-  const command = new FfmpegCommand();
-  command
+  const [vidPipe, audPipe] = ffmpeg(this.env, this.width, this.height);
+  vidPipe.pipe(this.yuv420p);
+  audPipe.pipe(this.audioParser);
+  /*command
     .input(this.env.DISPLAY)
+    .inputFps(30)
     .inputFormat('x11grab')
     .inputOptions('-s 1920x1080')
-    .noAudio()
-    .fps(30)
+    
+    .input('default')
+    .inputFormat('pulse')
+    .audioChannels(2)
+    
+    .output(this.yuv420p)
     .format('rawvideo')
     .videoFilter({
       filter: 'format',
       options: 'yuv420p'
     })
-    .output(this.yuv420p);
-  command.run();
+    .output(this.audioParser)
+    .outputOptions('-ac 2')
+    .format('s16be')
+
+  command.run();*/
 
   this.input = {
     mouseMove: (x, y) => {
@@ -154,9 +211,12 @@ function init() {
 
 class VirtualBrowser {
   constructor(width, height, bitDepth, disp = ':100') {
-    const source = new RTCVideoSource();
-    const track = source.createTrack();
-    const frame = { width, height, data: null };
+    const vidSource = new RTCVideoSource();
+    const audSource = new RTCAudioSource();
+    const vidTrack = vidSource.createTrack();
+    const audTrack = audSource.createTrack();
+    const videoFrame = { width, height, data: null };
+    const audioData = { sampleRate: 48000, channelCount: 2, samples: null };
 
     this.width = width;
     this.height = height;
@@ -165,13 +225,20 @@ class VirtualBrowser {
 
     this.yuv420p = new Yuv420pParser(width * height * 1.5, 4);
     this.yuv420p.onFrame = (data) => {
-      frame.data = data;
-      source.onFrame(frame);
+      videoFrame.data = data;
+      vidSource.onFrame(videoFrame);
     }
     this.yuv420p.onClose = () => {
-      track.stop();
+      vidTrack.stop();
     };
-    this.mediaStream = new MediaStream([track]);
+
+    this.audioParser = new AudioParser(16, audioData.sampleRate, audioData.channelCount, 4*3);
+    this.audioParser.onFrame =(samples) => {
+      audioData.samples=samples;
+      audSource.onData({...audioData});
+    };
+
+    this.mediaStream = new MediaStream([vidTrack, audTrack]);
     init.call(this);
   }
 }

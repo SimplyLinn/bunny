@@ -26,8 +26,8 @@ const args = argv({
 console.log(process.argv);
 console.log(args);
 const defaults = {
-  width: '1920',
-  height: '1080',
+  width: '1280',
+  height: '720',
   bit_depth: '24',
   signal_server: 'ws://bunn.is',
   firefox_args: ''

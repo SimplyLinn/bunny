@@ -49,20 +49,28 @@ RUN mkdir -p /var/run/dbus
 #=================================
 # Audio
 #=================================
-RUN apt-get update && apt-get -y install pulseaudio socat alsa-utils
+RUN apt-get update && apt-get -y install pulseaudio socat alsa-utils consolekit
 
 USER viewer
 
+RUN mkdir ~/bin
+ENV PATH="/home/viewer/bin:${PATH}"
 RUN mkdir ~/renderServer
 
 WORKDIR /home/viewer/renderServer
 
-COPY package.json package-lock.json ./
-RUN npm ci
-COPY pulseaudio.sh ./pulseaudio.sh
-COPY src/ ./src
 USER root
-RUN chown -R viewer:viewer .
+COPY package.json package-lock.json ./
+RUN chown viewer:viewer package.json package-lock.json
 USER viewer
+RUN npm ci
+USER root
+COPY pulseaudio.sh /home/viewer/bin/start-pulseaudio
+RUN chown viewer:viewer /home/viewer/bin/start-pulseaudio
+COPY src/ ./src
+RUN chown -R viewer:viewer /home/viewer/renderServer/src
+USER viewer
+
 RUN ls -la
+
 ENTRYPOINT [ "npm", "start", "--" ]

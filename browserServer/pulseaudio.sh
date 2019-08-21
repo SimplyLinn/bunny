@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Start the pulseaudio server
-pulseaudio -D --exit-idle-time=-1
+pulseaudio --exit-idle-time=-1
 
 # Load the virtual sink and set it as default
 pacmd load-module module-virtual-sink sink_name=v1

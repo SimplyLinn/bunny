@@ -1,15 +1,16 @@
 const Writable = require('stream').Writable;
 
-class Yuv420pParser extends Writable {
-  constructor(frameSize, frames) {
+class AudioParser extends Writable {
+  constructor(bitsPerSample, sampleRate, channelCount, frames) {
     super();
     /**
-     * @type {Array<Uint8Array>}
+     * @type {Array<Int16Array>}
      */
     this.frames = [];
-    this.frameSize = frameSize;
+    console.log(bitsPerSample, channelCount, sampleRate);
+    this.frameSize = (bitsPerSample/16) * channelCount * 2 * (sampleRate/100);
     for(let i = 0; i < frames; i++) {
-      this.frames.push(new Uint8Array(frameSize));
+      this.frames.push(new Uint8Array(this.frameSize));
     }
     this.curFramePos = 0;
     this.curFrame = 0;
@@ -44,4 +45,4 @@ class Yuv420pParser extends Writable {
   }
 }
 
-module.exports = Yuv420pParser;
+module.exports = AudioParser;
