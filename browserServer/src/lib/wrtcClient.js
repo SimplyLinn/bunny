@@ -2,8 +2,9 @@
 const WebSocket = require('ws');
 const Peer = require('simple-peer');
 const wrtc = require('wrtc');
+const InstructionReader = require('./instructionReader');
 
-function onOpen() {
+/*function onOpen() {
   this.send({
     auth: {
       type: browserServer,
@@ -11,7 +12,7 @@ function onOpen() {
       protocolVersion: 1
     }
   });
-}
+}*/
 
 function onMessage(msg) {
   const message = JSON.parse(msg);
@@ -38,13 +39,14 @@ class WrtcClient {
       perMessageDeflate: false,
       rejectUnauthorized: false
     });
-    //ws.on('open', onOpen.bind(this));
+    //this.ws.on('open', onOpen.bind(this));
     this.ws.on('message', onMessage.bind(this));
   }
 
   newClient(msg, initiator) {
     console.log(msg, initiator);
-    const peer = new Peer({ wrtc: wrtc, initiator, stream: this.virtualBrowser.mediaStream });
+    const peer = new Peer({ wrtc: wrtc, initiator });
+    peer.addStream(this.virtualBrowser.getStream(peer));
     peer.cid = msg.cid;
     this.peers.set(peer.cid, peer);
     peer.on('error', (err) => {
@@ -58,7 +60,8 @@ class WrtcClient {
         signal
       });
     });
-    peer.on('data', onData.bind(this));
+    //peer.on('data', onData.bind(this));
+    new InstructionReader(peer, this);
     return peer;
   }
 

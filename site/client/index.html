@@ -8,9 +8,71 @@
       }
     </style>
     <video id="remoteVideo" autoplay></video>
-    <pre id="outgoing"></pre>
+    <textarea id="dummyInput" style="position: absolute; left: -9999px"></textarea>
+    <script src="opCodes.js"></script>
+    <script src="keyboard.js"></script>
     <script src="simplepeer.min.js"></script>
     <script>
+      class InstructionBuffer {
+        constructor(opCode, size) {
+          this.arrayBuffer = new ArrayBuffer(size+3);
+          this.header = new DataView(this.arrayBuffer, 0, 3);
+          this.payload = new DataView(this.arrayBuffer, 3);
+          this.pos = 0;
+          this.header.setUint8(0, opCode);
+          this.header.setUint16(1, this.payload.byteLength);
+        }
+
+        writeBigInt64(val, le) {
+          this.payload.setBigInt64(this.pos, val, le);
+          this.pos += 8;
+        }
+
+        writeBigUint64(val, le) {
+          this.payload.setBigUint64(this.pos, val, le);
+          this.pos += 8;
+        }
+
+        writeFloat64(val, le) {
+          this.payload.setFloat64(this.pos, val, le);
+          this.pos += 8;
+        }
+
+        writeFloat32(val, le) {
+          this.payload.setFloat32(this.pos, val, le);
+          this.pos += 4;
+        }
+
+        writeInt32(val, le) {
+          this.payload.setInt32(this.pos, val, le);
+          this.pos += 4;
+        }
+
+        writeInt16(val, le) {
+          this.payload.setInt16(this.pos, val, le);
+          this.pos += 2;
+        }
+
+        writeInt8(val, le) {
+          this.payload.setInt8(this.pos, val, le);
+          this.pos += 1;
+        }
+
+        writeUint32(val, le) {
+          this.payload.setUint32(this.pos, val, le);
+          this.pos += 4;
+        }
+
+        writeUint16(val, le) {
+          this.payload.setUint16(this.pos, val, le);
+          this.pos += 2;
+        }
+
+        writeUint8(val, le) {
+          this.payload.setUint8(this.pos, val, le);
+          this.pos += 1;
+        }
+      }
       // get video/voice stream
       function pageReady() {
         serverConnection = new WebSocket('wss://' + window.location.hostname + ':8443');
@@ -25,6 +87,10 @@
       }
       let vidFocus = false;
       const video = document.getElementById('remoteVideo');
+      setInterval(()=>{
+        if(video.paused) video.play();
+      }, 1000);
+      const input = document.getElementById('dummyInput');
       document.addEventListener('mousedown', e => {
         vidFocus = false;
       });
@@ -33,7 +99,9 @@
         const rect = video.getBoundingClientRect();
         x = e.clientX - rect.left;
         y = e.clientY - rect.top;
-        peer.write(JSON.stringify({input:'mouseDown', args: [x, y, e.button+1]}));
+        const inst = new InstructionBuffer(opCodes.MOUSE_BTN_DWN, 1);
+        inst.writeUint8(e.button+1);
+        peer.send(inst.arrayBuffer);
         e.preventDefault();
         e.stopPropagation();
       });
@@ -42,12 +110,19 @@
         const rect = video.getBoundingClientRect();
         x = e.clientX - rect.left;
         y = e.clientY - rect.top;
-        peer.write(JSON.stringify({input:'mouseUp', args: [x, y, e.button+1]}));
+        const inst = new InstructionBuffer(opCodes.MOUSE_BTN_UP, 1);
+        inst.writeUint8(e.button+1);
+        peer.send(inst.arrayBuffer);
         e.preventDefault();
         e.stopPropagation();
       });
+      video.addEventListener('contextmenu', e => {
+        if(!vidFocus) return false;
+        e.preventDefault();
+      });
       video.addEventListener('click', e => {
         vidFocus = true;
+        input.focus();
         e.preventDefault();
         e.stopPropagation();
       });
@@ -56,27 +131,43 @@
         const rect = video.getBoundingClientRect();
         x = e.clientX - rect.left;
         y = e.clientY - rect.top;
-        peer.write(JSON.stringify({input:'mouseMove', args: [x, y]}));
+        const inst = new InstructionBuffer(opCodes.MOUSE_MOVE, 4);
+        inst.writeUint16(x);
+        inst.writeUint16(y);
+        peer.send(inst.arrayBuffer);
         e.preventDefault();
       });
-      video.addEventListener('contextmenu', e => {
+      video.addEventListener('wheel', e => {
         if(!vidFocus) return false;
-        video.play();
+        const ydir = Math.sign(e.deltaY);
+        const xdir = Math.sign(e.deltaX)
+        if(!xdir && !ydir || (xdir && ydir)) return;
+        let btn;
+        if(ydir && ydir < 0) btn = 4; 
+        if(ydir && ydir > 0) btn = 5;
+        if(xdir && xdir < 0) btn = 6;
+        if(xdir && xdir > 0) btn = 7;
+        const rect = video.getBoundingClientRect();
+        x = e.clientX - rect.left;
+        y = e.clientY - rect.top;
+        const inst = new InstructionBuffer(opCodes.MOUSE_BTN_CLK, 1);
+        inst.writeUint8(btn);
+        peer.send(inst.arrayBuffer);
         e.preventDefault();
       });
-
-      document.addEventListener('keydown', e => {
+      const keyboard = new Keyboard(input);
+      keyboard.onkeydown = (key) => {
         if(!vidFocus) return false;
-        e.preventDefault();
-        if(e.repeat) return true;
-        console.log(e.key)
-        peer.write(JSON.stringify({input:'keyDown', args: [e.key]}));
-      });
-      document.addEventListener('keyup', e => {
+        const inst = new InstructionBuffer(opCodes.KEY_DOWN, 2);
+        inst.writeUint16(key);
+        peer.send(inst.arrayBuffer);
+      };
+      keyboard.onkeyup = (key) => {
         if(!vidFocus) return false;
-        e.preventDefault();
-        peer.write(JSON.stringify({input:'keyUp', args: [e.key]}));
-      });
+        const inst = new InstructionBuffer(opCodes.KEY_UP, 2);
+        inst.writeUint16(key);
+        peer.send(inst.arrayBuffer);
+      };
 
       peer = {write(){}};
       peers = new Map;

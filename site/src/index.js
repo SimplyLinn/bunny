@@ -26,6 +26,12 @@ const handleRequest = function(request, response) {
   } else if(request.url === '/simplepeer.min.js') {
     response.writeHead(200, {'Content-Type': 'application/javascript'});
     response.end(fs.readFileSync('client/simplepeer.min.js'));
+  } else if(request.url === '/opCodes.js') {
+    response.writeHead(200, {'Content-Type': 'application/javascript'});
+    response.end(fs.readFileSync('client/opCodes.js'));
+  } else if(request.url === '/keyboard.js') {
+    response.writeHead(200, {'Content-Type': 'application/javascript'});
+    response.end(fs.readFileSync('client/keyboard.js'));
   } else {
     response.writeHead(404).end();
   }

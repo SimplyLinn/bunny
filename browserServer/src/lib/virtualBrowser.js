@@ -133,7 +133,7 @@ function ffmpeg(env, width, height) {
     '-vn',
     '-af', 'aresample=async=1',
     '-ac', '2',
-    '-r', '48000',
+    '-ar', '44100',
     'pipe:1'
   ];
   const vidOpts = {
@@ -141,7 +141,7 @@ function ffmpeg(env, width, height) {
     stdio: [
       'ignore',
       'pipe',
-      'inherit',
+      'ignore',
     ]
   };
   const audOpts = {
@@ -149,7 +149,7 @@ function ffmpeg(env, width, height) {
     stdio: [
       'ignore',
       'pipe',
-      'ignore',
+      'inherit',
     ]
   };
   const vidPipe = spawn('ffmpeg', vidArgs, vidOpts).stdout;
@@ -167,27 +167,6 @@ function init() {
   const [vidPipe, audPipe] = ffmpeg(this.env, this.width, this.height);
   vidPipe.pipe(this.yuv420p);
   audPipe.pipe(this.audioParser);
-  /*command
-    .input(this.env.DISPLAY)
-    .inputFps(30)
-    .inputFormat('x11grab')
-    .inputOptions('-s 1920x1080')
-    
-    .input('default')
-    .inputFormat('pulse')
-    .audioChannels(2)
-    
-    .output(this.yuv420p)
-    .format('rawvideo')
-    .videoFilter({
-      filter: 'format',
-      options: 'yuv420p'
-    })
-    .output(this.audioParser)
-    .outputOptions('-ac 2')
-    .format('s16be')
-
-  command.run();*/
 
   this.input = {
     mouseMove: (x, y) => {
@@ -211,12 +190,12 @@ function init() {
 
 class VirtualBrowser {
   constructor(width, height, bitDepth, disp = ':100') {
-    const vidSource = new RTCVideoSource();
-    const audSource = new RTCAudioSource();
-    const vidTrack = vidSource.createTrack();
-    const audTrack = audSource.createTrack();
+    const vidSource = new RTCVideoSource(); 
+    this.vidTrack = vidSource.createTrack();
     const videoFrame = { width, height, data: null };
-    const audioData = { sampleRate: 48000, channelCount: 2, samples: null };
+    const audioData = { sampleRate: 44100, channelCount: 2, samples: null };
+
+    this.audSources = new Set;
 
     this.width = width;
     this.height = height;
@@ -229,17 +208,31 @@ class VirtualBrowser {
       vidSource.onFrame(videoFrame);
     }
     this.yuv420p.onClose = () => {
-      vidTrack.stop();
+      this.vidTrack.stop();
     };
 
     this.audioParser = new AudioParser(16, audioData.sampleRate, audioData.channelCount, 4*3);
     this.audioParser.onFrame =(samples) => {
       audioData.samples=samples;
-      audSource.onData({...audioData});
+      this.audSources.forEach(audSource => audSource.onData({...audioData}));
     };
 
-    this.mediaStream = new MediaStream([vidTrack, audTrack]);
+    //this.stream = new MediaStream([vidTrack, audTrack]);
+    //this.vidStream = new MediaStream([vidTrack]);
+    //this.audStream = new MediaStream([audTrack]);
     init.call(this);
+  }
+
+  getStream(peer) {
+    const audSource = new RTCAudioSource();
+    this.audSources.add(audSource);
+    const audTrack = audSource.createTrack();
+    const ms = new MediaStream([this.vidTrack, audTrack]);
+    peer.on('close', () => {
+      this.audSources.delete(audSource);
+      audTrack.stop();
+    });
+    return ms;
   }
 }
 

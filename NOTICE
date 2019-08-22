@@ -1,0 +1,11 @@
+Apache Guacamole
+Copyright 2019 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+--------------------------------------------------------
+
+One part of this project, to be specific, the Keyboard module for the client side
+comes from https://github.com/apache/guacamole-client/blob/master/guacamole-common-js/src/main/webapp/modules/Keyboard.js
+and is therefore not under the MIT license the rest of the project is.
