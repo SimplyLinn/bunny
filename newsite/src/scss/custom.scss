@@ -1,0 +1,74 @@
+// Brand colorscheme
+$brandMain: #faed26;
+$brandNavbar: #46344e;
+$brandBg: #5a5560;
+$brandPrimary: #9d8d8f;
+$brandBrown: #9b786f;
+$brandLight: #fff894;
+
+// Theme color default definitions
+$primary: $brandLight;
+$secondary: $brandMain;
+//$success: $green;
+//$info: $brandInfo;
+//$warning: $yellow;
+//$danger: $red;
+//$light: $brandLight;
+//$dark: $gray-800;
+
+// This table defines the theme colors (variant names)
+$theme-colors: () !default;
+$theme-colors: map-merge(
+  (
+    'primary': $primary,
+    'secondary': $secondary,
+//    'success': $success,
+//    'info': $info,
+//    'warning': $warning,
+//    'danger': $danger,
+//    'light': $light,
+//    'dark': $dark
+  ),
+  $theme-colors
+);
+
+@import '~bootstrap/scss/bootstrap.scss';
+@import '~bootstrap-vue/src/index.scss';
+
+html { padding-left: calc(100vw - 100%); }
+
+body {
+  background-color: $brandBg;
+  color: $gray-300;
+}
+
+.statusMessages {
+  position: absolute;
+  left: 0;
+  right: 0;
+  opacity: 0.6;
+  &:hover {
+    opacity: 1;
+  }
+}
+
+.navbar-dark {
+  &:before {
+    content: '';
+    z-index: -1;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 100vw;
+    background-color: $brandNavbar;
+  }
+}
+
+.navbar-dark .navbar-brand {
+  color: $brandMain;
+}
+
+.dropdown-item.active, .dropdown-item:active {
+  color: $gray-700;
+}
