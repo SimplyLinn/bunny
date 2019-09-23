@@ -1,8 +1,18 @@
-const conf = require('./conf');
-const VirtualBrowser = require('./lib/virtualBrowser');
-const WrtcClient = require('./lib/wrtcClient');
+import config from './conf'
+import VirtualBrowser from './lib/virtualBrowser'
+import WrtcClient from './lib/wrtcClient'
 
-const virtualBrowser = new VirtualBrowser(+conf.width, +conf.height, +conf.bit_depth);
-new WrtcClient(conf.signal_server, virtualBrowser)
+(async()=>{
+  const virtualBrowser = new VirtualBrowser(config)
+  await virtualBrowser.init()
+
+  console.log('---Virtual Browser Initialized---')
+  const wrtcClient = new WrtcClient({
+    signalServer : config.signalServer, 
+    virtualBrowser
+  })
+  wrtcClient.init()
+  console.log('---WRTC Client Initialized---')
+})()
 
 

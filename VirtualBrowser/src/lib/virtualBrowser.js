@@ -1,239 +1,185 @@
-const { RTCVideoSource, RTCAudioSource } = require('wrtc').nonstandard;
-const { MediaStream } = require('wrtc');
-const FfmpegCommand = require('fluent-ffmpeg');
-const { spawn, exec } = require('child_process');
+import * as wrtc from 'wrtc'
 
-const Yuv420pParser = require('./yuv420pParser');
-const AudioParser = require('./audioParser');
+import Yuv420pParser from './yuv420pParser'
+import AudioParser from './audioParser'
+import ProcessBus from './ProcessBus'
+import { dbus, xvfb, firefox, pulseAudio, openbox, ffmpeg, xdotool } from './processes'
 
 function keyRemapper(key) {
   switch(key) {
     case ' ':
-      return '0xff80';
+      key = '0xff80'
+      break
     case 'Backspace':
-      return '0xff08';
+      key = '0xff08'
+      break
     case 'Enter':
-      return '0xff8d';
+      key = '0xff8d'
+      break
     case '.':
-      return '0x002e';
+      key = '0x002e'
+      break
     case '!':
-      return '0x0021';
+      key = '0x0021'
+      break
     case ',':
-      return '0x002c';
+      key = '0x002c'
+      break
     default:
-      return key;
+      key = key
+      break
   }
+  return key.replace(/'/, `\'`) // maybe double backslash
 }
 
-function xvfb(env, width, height, bd) {
-  const args = [
-    env.DISPLAY,
-    '-ac',
-    '-screen', '0', `${width}x${height}x${bd}`
-  ];
-  const opts = {
-    stdio: [
-      'ignore',
-      'inherit',
-      'inherit'
-    ]
-  };
-  return spawn('Xvfb', args, opts);
-}
+// function ffmpeg_old(env, width, height) {
+//   const vidPipe = spawn('ffmpeg', vidArgs, vidOpts).stdout;
+//   const audPipe = spawn('ffmpeg', audArgs, audOpts).stdout;
+//   return [vidPipe, audPipe];
+// }
 
-function openbox(env) {
-  const args = [];
-  const opts = {
-    env,
-    stdio: [
-      'ignore',
-      'inherit',
-      'inherit'
-    ]
-  };
-  return spawn('openbox', args, opts);
-}
+/**
+ * Controls all of the necessary elements in order to display and 
+ * interact with the virtual browser on the system.
+ */
+export default class VirtualBrowser extends ProcessBus {
+  constructor(options = {}) {
+    super(options)
+    const { 
+      width    = 1080, 
+      height   = 720, 
+      bitDepth = 24, 
+      display  = 20,
+    } = options
 
-function firefox(env, width, height) {
-  const args = [
-    '-width', width,
-    '-height', height,
-    'https://www.youtube.com/'
-  ];
-  const opts = {
-    env,
-    stdio: [
-      'ignore',
-      'inherit',
-      'inherit'
-    ]
-  };
-  return spawn('firefox-esr', args, opts);
-}
+    this.width = width
+    this.height = height
+    this.bitDepth = bitDepth
+    this.display = display
+    this.inputStreamIsInitialized = false
+    this.env = { DISPLAY : display }
+    this._createSources()
+  }
 
-function xdotool(env) {
-  const args = [
-    '-'
-  ];
-  const opts = {
-    env,
-    stdio: [
-      'pipe',
-      'inherit',
-      'inherit'
-    ]
-  };
-  return spawn('xdotool', args, opts);
-}
-
-function dbus(env) {
-  const args = [
-    'dbus-daemon',
-    '--nofork',
-    '--config-file=/usr/share/dbus-1/system.conf'
-  ];
-  const opts = {
-    env,
-    stdio: [
-      'ignore',
-      'inherit',
-      'inherit'
-    ]
-  };
-  return spawn('sudo', args, opts);
-}
-
-function pulseaudio(env) {
-  return pa = exec('DISPLAY=:100 start-pulseaudio', (err, stdout, stderr) => {
-    console.log(stdout);
-    console.error(stderr);
-    if(err) console.error(err);
-  });
-}
-
-function ffmpeg(env, width, height) {
-  const vidArgs = [
-    '-s', `${width}x${height}`,
-    '-r', '30',
-    '-f', 'x11grab',
-    '-i', env.DISPLAY,
-
-    '-vf', 'format=yuv420p',
-    '-f', 'rawvideo',
-    '-an',
-    'pipe:1'
-  ];
-  
-  const audArgs = [
-    '-f', 'pulse',
-    '-ac', '2',
-    '-i', 'default',
-
-    '-f', 's16le',
-    '-vn',
-    '-af', 'aresample=async=1',
-    '-ac', '2',
-    '-ar', '44100',
-    'pipe:1'
-  ];
-  const vidOpts = {
-    env,
-    stdio: [
-      'ignore',
-      'pipe',
-      'ignore',
-    ]
-  };
-  const audOpts = {
-    env,
-    stdio: [
-      'ignore',
-      'pipe',
-      'inherit',
-    ]
-  };
-  const vidPipe = spawn('ffmpeg', vidArgs, vidOpts).stdout;
-  const audPipe = spawn('ffmpeg', audArgs, audOpts).stdout;
-  return [vidPipe, audPipe];
-}
-
-function init() {
-  dbus(this.env);
-  xvfb(this.env, this.width, this.height, this.bitDepth);
-  pulseaudio(this.env);
-  openbox(this.env);
-  firefox(this.env, this.width, this.height);
-  this.xdoin = xdotool(this.env).stdin;
-  const [vidPipe, audPipe] = ffmpeg(this.env, this.width, this.height);
-  vidPipe.pipe(this.yuv420p);
-  audPipe.pipe(this.audioParser);
-
-  this.input = {
-    mouseMove: (x, y) => {
-      this.xdoin.write(`mousemove ${x} ${y}\n`);
-    },
-    mouseDown: (x, y, btn) => {
-      this.xdoin.write(`mousemove ${x} ${y}\nmousedown ${btn}\n`);
-    },
-    mouseUp: (x, y, btn) => {
-      this.xdoin.write(`mousemove ${x} ${y}\nmouseup ${btn}\n`);
-    },
-    keyDown: (key) => {
-      console.log(`'${keyRemapper(key).replace(/'/g,'\\\'')}'`)
-      this.xdoin.write(`keydown '${keyRemapper(key).replace(/'/g,'\\\'')}'\n`);
-    },
-    keyUp: (key) => {
-      this.xdoin.write(`keyup '${keyRemapper(key).replace(/'/g,'\\\'')}'\n`);
+  _createSources(){
+    // This next line closes the program without throwing an error on alpine
+    const videoFrame = { 
+      width  : this.width, 
+      height : this.height, 
+      data   : null 
     }
-  }
-}
 
-class VirtualBrowser {
-  constructor(width, height, bitDepth, disp = ':100') {
-    const vidSource = new RTCVideoSource(); 
-    this.vidTrack = vidSource.createTrack();
-    const videoFrame = { width, height, data: null };
-    const audioData = { sampleRate: 44100, channelCount: 2, samples: null };
+    const audioData = { 
+      sampleRate    : 44100, 
+      channelCount  : 2, 
+      samples       : null 
+    }
 
-    this.audSources = new Set;
+    const vidSource = new wrtc.nonstandard.RTCVideoSource()
+    const vidTrack = vidSource.createTrack()
+    
+    this.audSources = new Set()
 
-    this.width = width;
-    this.height = height;
-    this.bitDepth = bitDepth;
-    this.env = Object.assign({}, process.env, {DISPLAY: disp});
+    this.yuv420p = new Yuv420pParser(this.width * this.height * 1.5, 4)
 
-    this.yuv420p = new Yuv420pParser(width * height * 1.5, 4);
     this.yuv420p.onFrame = (data) => {
       videoFrame.data = data;
       vidSource.onFrame(videoFrame);
     }
+
     this.yuv420p.onClose = () => {
-      this.vidTrack.stop();
-    };
+      vidTrack.stop();
+    }
 
-    this.audioParser = new AudioParser(16, audioData.sampleRate, audioData.channelCount, 4*3);
+    this.audioParser = new AudioParser(16, audioData.sampleRate, audioData.channelCount, 4*3)
+
     this.audioParser.onFrame =(samples) => {
-      audioData.samples=samples;
-      this.audSources.forEach(audSource => audSource.onData({...audioData}));
-    };
-
-    //this.stream = new MediaStream([vidTrack, audTrack]);
-    //this.vidStream = new MediaStream([vidTrack]);
-    //this.audStream = new MediaStream([audTrack]);
-    init.call(this);
+      audioData.samples = samples
+      this.audSources.forEach(audSource => audSource.onData({...audioData}))
+    }
   }
 
+  async init() {
+    // Be careful about race conditions here
+    await this.spawnProcess('dbus', dbus)
+    await this.spawnProcess('xvfb', xvfb, [
+      this.width, 
+      this.height,
+      this.bitDepth
+    ])
+    // Should be possible to launch the following in parallel 
+    await this.spawnProcess('openbox', openbox)
+    // await this.spawnProcess('pulse-audio', pulseAudio, [this.env.DISPLAY])
+    await this.spawnProcess('firefox', firefox, [this.width, this.height])
+    // firefox(this.env, this.width, this.height);
+    // this.xdoin = xdotool(this.env).stdin;
+    await this.spawnProcess('xdotool', xdotool)
+    this.inputStreamIsInitialized = true
+    await this.spawnProcess('ffmpeg-video', ffmpeg.video, [this.width, this.height])
+    // await this.spawnProcess('ffmpeg-audio', ffmpeg.audio)
+
+    // const [vidPipe, audPipe] = ffmpeg(this.env, this.width, this.height);
+    // vidPipe.pipe(this.yuv420p);
+    // audPipe.pipe(this.audioParser);
+  }
+
+  mouseMove(x, y){
+    this.writeCommand(`mousemove ${x} ${y}`)
+  }
+
+  mouseDown(x, y, btn){
+    this.mouseMove(x, y)
+    this.writeCommand(`mousedown ${btn}`)
+  }
+
+  mouseUp(x, y, btn){
+    this.mouseMove(x, y)
+    this.writeCommand(`mouseup ${btn}`)
+  }
+
+  keyDown(key){
+    const mappedKey = keyRemapper(key)
+    this.writeCommand(`keydown ${mappedKey}`)
+  }
+
+  keyUp(key){
+    const mappedKey = keyRemapper(key)
+    this.writeCommand(`keyup ${mappedKey}`)
+  }
+
+  toggleInput(bool){
+    this.ignoreInput = typeof bool === 'boolean' ? !bool : !this.ignoreInput
+  }
+
+  writeCommand(command){
+    // write to xdotool.stdin (add newline to the end too)
+    if(!this.inputStreamIsInitialized){
+      console.warn(`Warning: xdotool input stream not initialized. Commands will be ignored`)
+      this.ignoreInput = true
+    }
+    if(this.ignoreInput) return
+    this._input.write(`${command}\n`)
+    // or maybe
+    // xdotool.write('<id>', `${command}\n`)
+  }
+
+  /**
+   * Get a stream for a peer(?)
+   * @param {*} peer 
+   */
   getStream(peer) {
-    const audSource = new RTCAudioSource();
+    const audSource = new wrtc.nonstandard.RTCAudioSource();
     this.audSources.add(audSource);
     const audTrack = audSource.createTrack();
-    const ms = new MediaStream([this.vidTrack, audTrack]);
+    const ms = new wrtc.MediaStream([this.vidTrack, audTrack]);
     peer.on('close', () => {
       this.audSources.delete(audSource);
       audTrack.stop();
     });
     return ms;
   }
-}
 
-module.exports = VirtualBrowser;
+  close(){
+    // Cleanup and shut down
+  }
+}

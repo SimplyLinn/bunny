@@ -1,8 +1,8 @@
-
-const WebSocket = require('ws');
-const Peer = require('simple-peer');
-const wrtc = require('wrtc');
-const InstructionReader = require('./instructionReader');
+// TODO: Use Socket.io instead?
+import WebSocket from 'ws'
+import Peer from 'simple-peer'
+import wrtc from 'wrtc'
+import InstructionReader from './instructionReader'
 
 /*function onOpen() {
   this.send({
@@ -14,55 +14,66 @@ const InstructionReader = require('./instructionReader');
   });
 }*/
 
-function onMessage(msg) {
-  const message = JSON.parse(msg);
-  switch(message.type) {
-    case 'announce':
-      this.newClient(message, true);
-      break;
-    case 'signal':
-      this.signal(message);
+export default class WrtcClient {
+  constructor(config={}) {
+    const { 
+      signalServer,
+      virtualBrowser
+    } = config
+
+    this.virtualBrowser = virtualBrowser
+    this.signalServer = signalServer
+    this.peers = new Map()
   }
-}
 
-function onData(msg) {
-  msg = JSON.parse(msg);
-  console.log(msg)
-  this.virtualBrowser.input[msg.input](...(msg.args||[]));
-}
-
-class WrtcClient {
-  constructor(signalServer, virtualBrowser) {
-    this.virtualBrowser = virtualBrowser;
-    this.peers = new Map;
-    this.ws = new WebSocket(signalServer, {
-      perMessageDeflate: false,
-      rejectUnauthorized: false
-    });
+  init(){
+    try{
+      this.ws = new WebSocket(this.signalServer, {
+        perMessageDeflate: false,
+        rejectUnauthorized: false
+      })
+      this.ws.on('message', this.onMessage)
+    }catch(e){
+      console.warn(e)
+    }
     //this.ws.on('open', onOpen.bind(this));
-    this.ws.on('message', onMessage.bind(this));
   }
 
-  newClient(msg, initiator) {
-    console.log(msg, initiator);
-    const peer = new Peer({ wrtc: wrtc, initiator });
-    peer.addStream(this.virtualBrowser.getStream(peer));
+  onMessage(msg) {
+    const message = JSON.parse(msg)
+    console.log('Message Received')
+    if(!this[message.type]) return
+    this[message.type](message)
+  }
+
+  announce(msg, initiator=true) {
+    console.log(msg, initiator)
+    const peer = new Peer({ wrtc: wrtc, initiator })
+    peer.addStream(this.virtualBrowser.getStream(peer))
     peer.cid = msg.cid;
-    this.peers.set(peer.cid, peer);
+    
+    this.peers.set(peer.cid, peer)
+
     peer.on('error', (err) => {
-      console.log('PEER ERROR', err);
-    });
-    peer.on('close', () => this.peers.delete(peer.cid));
-    peer.on('signal', signal => {
+      console.log('PEER ERROR', err)
+    })
+    .on('close', () => this.peers.delete(peer.cid))
+    .on('signal', signal => {
       this.send({
         type: 'signal',
         target: msg.cid,
         signal
-      });
-    });
-    //peer.on('data', onData.bind(this));
+      })
+    })
+    peer.on('data', onData);
     new InstructionReader(peer, this);
     return peer;
+  }
+
+  onData(msg) {
+    msg = JSON.parse(msg);
+    console.log(msg)
+    this.virtualBrowser[msg.input](...(msg.args||[]));
   }
 
   signal(msg) {
@@ -77,5 +88,3 @@ class WrtcClient {
     this.ws.send(JSON.stringify(obj));
   }
 }
-
-module.exports = WrtcClient;

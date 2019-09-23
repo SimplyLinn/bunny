@@ -1,5 +1,5 @@
-const opCodes = require('./opCodes');
-const BaseError = require('./baseError');
+import opCodes from './opCodes'
+import BaseError from './baseError'
 const inControl = null;
 
 class InvalidInstructionError extends BaseError {
@@ -68,7 +68,7 @@ class InstructionParser {
   }
 }
 
-class InstructionReader extends InstructionParser {
+export default class InstructionReader extends InstructionParser {
   constructor(peer, wrtcClient) {
     super(peer, wrtcClient);
     peer.instructionReader = this;
@@ -148,5 +148,3 @@ class InstructionReader extends InstructionParser {
     }
   }
 }
-
-module.exports = InstructionReader;

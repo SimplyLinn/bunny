@@ -1,3 +1,9 @@
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
 const opCodes = {
   MOUSE_MOVE: 0x01,
   MOUSE_BTN_DWN: 0x02,
@@ -8,13 +14,14 @@ const opCodes = {
   KEY_UP: 0x07,
   REQUEST_CONTROL: 0x08,
   RELEASE_CONTROL: 0x09,
-
-
   ERROR: 0xFF
 };
-const list = new Set;
-for(const key in opCodes) {
+const list = new Set();
+
+for (const key in opCodes) {
   list.add(opCodes[key]);
 }
+
 opCodes.list = list;
-export default opCodes;
+var _default = opCodes;
+exports.default = _default;

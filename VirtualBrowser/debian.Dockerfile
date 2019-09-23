@@ -1,4 +1,5 @@
-FROM node:dubnium-stretch-slim
+FROM node:12.10-slim
+USER root
 
 #==============
 # VNC and Xvfb
@@ -30,15 +31,6 @@ RUN apt-get update && \
     dbus-x11 \
     sudo
 
-#========================================
-# Add normal user with passwordless sudo
-#========================================
-RUN useradd viewer --shell /bin/bash --create-home
-RUN chown viewer:viewer /home/viewer
-RUN echo viewer ALL=\(ALL\) NOPASSWD:ALL >> /etc/sudoers
-
-USER root
-
 #============================================
 # Browsers
 #============================================
@@ -50,27 +42,17 @@ RUN mkdir -p /var/run/dbus
 # Audio
 #=================================
 RUN apt-get update && apt-get -y install pulseaudio socat alsa-utils consolekit
+# Workaround. See: http://blog.tigerteufel.de/?p=476
+RUN mkdir /tmp/.X11-unix
+RUN chmod 1777 /tmp/.X11-unix
+RUN chown root /tmp/.X11-unix/
 
-USER viewer
-
-RUN mkdir ~/bin
-ENV PATH="/home/viewer/bin:${PATH}"
-RUN mkdir ~/renderServer
-
-WORKDIR /home/viewer/renderServer
-
-USER root
-COPY package.json package-lock.json ./
-RUN chown viewer:viewer package.json package-lock.json
-USER viewer
-RUN npm ci
-USER root
-COPY pulseaudio.sh /home/viewer/bin/start-pulseaudio
-RUN chown viewer:viewer /home/viewer/bin/start-pulseaudio
+COPY package.json ./
+RUN yarn
+# Ensure file is executable
+COPY pulse-config.pa /bin
+COPY .babelrc ./
 COPY src/ ./src
-RUN chown -R viewer:viewer /home/viewer/renderServer/src
-USER viewer
 
-RUN ls -la
-
+# ENTRYPOINT ["bash"]
 ENTRYPOINT [ "npm", "start", "--" ]
