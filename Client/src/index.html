@@ -13,66 +13,6 @@
     <script src="keyboard.js"></script>
     <script src="simplepeer.min.js"></script>
     <script>
-      class InstructionBuffer {
-        constructor(opCode, size) {
-          this.arrayBuffer = new ArrayBuffer(size+3);
-          this.header = new DataView(this.arrayBuffer, 0, 3);
-          this.payload = new DataView(this.arrayBuffer, 3);
-          this.pos = 0;
-          this.header.setUint8(0, opCode);
-          this.header.setUint16(1, this.payload.byteLength);
-        }
-
-        writeBigInt64(val, le) {
-          this.payload.setBigInt64(this.pos, val, le);
-          this.pos += 8;
-        }
-
-        writeBigUint64(val, le) {
-          this.payload.setBigUint64(this.pos, val, le);
-          this.pos += 8;
-        }
-
-        writeFloat64(val, le) {
-          this.payload.setFloat64(this.pos, val, le);
-          this.pos += 8;
-        }
-
-        writeFloat32(val, le) {
-          this.payload.setFloat32(this.pos, val, le);
-          this.pos += 4;
-        }
-
-        writeInt32(val, le) {
-          this.payload.setInt32(this.pos, val, le);
-          this.pos += 4;
-        }
-
-        writeInt16(val, le) {
-          this.payload.setInt16(this.pos, val, le);
-          this.pos += 2;
-        }
-
-        writeInt8(val, le) {
-          this.payload.setInt8(this.pos, val, le);
-          this.pos += 1;
-        }
-
-        writeUint32(val, le) {
-          this.payload.setUint32(this.pos, val, le);
-          this.pos += 4;
-        }
-
-        writeUint16(val, le) {
-          this.payload.setUint16(this.pos, val, le);
-          this.pos += 2;
-        }
-
-        writeUint8(val, le) {
-          this.payload.setUint8(this.pos, val, le);
-          this.pos += 1;
-        }
-      }
       // get video/voice stream
       function pageReady() {
         serverConnection = new WebSocket('wss://' + window.location.hostname + ':8443');
@@ -168,53 +108,6 @@
         inst.writeUint16(key);
         peer.send(inst.arrayBuffer);
       };
-
-      peer = {write(){}};
-      peers = new Map;
-      function createPeer(msg, initiator) {
-        const newPeer = new SimplePeer({ initiator });
-        newPeer.cid = msg.cid;
-        peers.set(newPeer.cid, newPeer);
-        newPeer.on('error', (err) => {
-          console.log('PEER ERROR', err);
-        });
-        newPeer.on('close', () => peers.delete(newPeer.cid));
-        newPeer.on('signal', signal => {
-          send({
-            type: 'signal',
-            target: newPeer.cid,
-            signal
-          });
-        });
-        newPeer.on('stream', stream => {
-          peer = newPeer;
-          // got remote video stream, now let's show it in a video tag
-          if ('srcObject' in video) {
-            video.srcObject = stream;
-          } else {
-            video.src = window.URL.createObjectURL(stream) // for older browsers
-          }
-        })
-        return newPeer;
-      }
-
-      function processSignal(data) {
-        if(peers.has(data.cid)) return peers.get(data.cid).signal(data.signal);
-        const newPeer = createPeer(data, false);
-        newPeer.signal(data.signal);
-      }
-
-      function gotMessageFromServer(message) {
-        const data = JSON.parse(message.data);
-        console.log('WS-IN', data);
-        switch (data.type) {
-          case 'announce':
-            createPeer(data, true);
-            break;
-          case 'signal':
-            processSignal(data)
-        }
-      }
       pageReady();
     </script>
   </body>
