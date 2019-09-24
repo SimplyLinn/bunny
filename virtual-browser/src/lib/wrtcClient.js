@@ -2,7 +2,6 @@
 import WebSocket from 'ws'
 import Peer from 'simple-peer'
 import wrtc from 'wrtc'
-import InstructionReader from './instructionReader'
 
 /*function onOpen() {
   this.send({
@@ -82,20 +81,29 @@ export default class WrtcClient {
       })
     })
     peer.on('data', this.onData.bind(this));
-    new InstructionReader(peer, this)
-
+    // new InstructionReader(peer, this)
     return peer;
   }
 
   onData(msg) {
-    msg = JSON.parse(msg);
-    this.virtualBrowser[msg.input](...(msg.args||[]));
+    // invalid data shouldn't crash the whole system or disconnect the peer lol
+    try{
+      msg = JSON.parse(msg)
+      this.virtualBrowser[msg.type](...(msg.args || []))
+    }catch(e){
+      console.error(`Invalid Data: ${msg}`)
+      console.error(e) 
+    }
   }
 
   signal(msg) {
     console.log(`Signal ${msg}`)
-    let peer = this.peers.get(msg.cid);
-    peer.signal(msg.signal);
+    let peer = this.peers.get(msg.cid)
+    // TODO: create if not defined?
+    if(!peer){
+      return
+    }
+    peer.signal(msg.signal)
   }
 
   send(obj) {

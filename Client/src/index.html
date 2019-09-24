@@ -9,24 +9,10 @@
     </style>
     <video id="remoteVideo" autoplay></video>
     <textarea id="dummyInput" style="position: absolute; left: -9999px"></textarea>
-    <script src="opCodes.js"></script>
     <script src="keyboard.js"></script>
     <script src="simplepeer.min.js"></script>
     <script>
-      // get video/voice stream
-      function pageReady() {
-        serverConnection = new WebSocket('wss://' + window.location.hostname + ':8443');
-        serverConnection.onmessage = gotMessageFromServer;
-        serverConnection.onopen = () => {
-          console.log('websocket established');
-        };
-      }
-      function send(obj) {
-        console.log('WS-OUT', obj);
-        serverConnection.send(JSON.stringify(obj));
-      }
       let vidFocus = false;
-      const video = document.getElementById('remoteVideo');
       setInterval(()=>{
         if(video.paused) video.play();
       }, 1000);

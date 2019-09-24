@@ -4,6 +4,8 @@ import Yuv420pParser from './yuv420pParser'
 import AudioParser from './audioParser'
 import ProcessBus from './ProcessBus'
 import { dbus, xvfb, firefox, pulseAudio, openbox, ffmpeg, xdotool } from './processes'
+import InstructionReader from './instructionReader'
+
 
 function keyRemapper(key) {
   switch(key) {
@@ -46,6 +48,7 @@ export default class VirtualBrowser extends ProcessBus {
   constructor(options = {}) {
     super(options)
     const { 
+      ignoreInput = false,
       width    = 1080, 
       height   = 720, 
       bitDepth = 24, 
@@ -56,8 +59,10 @@ export default class VirtualBrowser extends ProcessBus {
     this.height = height
     this.bitDepth = bitDepth
     this.display = display
-    this.inputStreamIsInitialized = false
+    this.ignoreInput = ignoreInput
+    this.inputStream = null
     this.env = { DISPLAY : display }
+    this.instructionReader = new InstructionReader()
     this._createSources()
   }
 
@@ -116,8 +121,9 @@ export default class VirtualBrowser extends ProcessBus {
     await this.spawnProcess('firefox', firefox, [this.width, this.height])
     // firefox(this.env, this.width, this.height);
     // this.xdoin = xdotool(this.env).stdin;
-    await this.spawnProcess('xdotool', xdotool)
-    this.inputStreamIsInitialized = true
+    await this.spawnProcess('xdo', xdotool)
+    this.inputStream = xdotool.processes['xdo'].stdin
+
     await this.spawnProcess('vstream', ffmpeg.video, [this.width, this.height])
     // await this.spawnProcess('ffmpeg-audio', ffmpeg.audio)
     const vidPipe = ffmpeg.video.processes['vstream'].stdout
@@ -155,15 +161,12 @@ export default class VirtualBrowser extends ProcessBus {
   }
 
   writeCommand(command){
-    // write to xdotool.stdin (add newline to the end too)
-    if(!this.inputStreamIsInitialized){
-      console.warn(`Warning: xdotool input stream not initialized. Commands will be ignored`)
-      this.ignoreInput = true
-    }
-    if(this.ignoreInput) return
-    this._input.write(`${command}\n`)
-    // or maybe
-    // xdotool.write('<id>', `${command}\n`)
+    if(this.ignoreInput || !this.inputStream) return false
+    this.inputStream.write(`${command}\n`)
+  }
+
+  readInstructions(){
+    
   }
 
   /**

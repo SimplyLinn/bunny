@@ -17,7 +17,6 @@ export default class WRTCSessionManager extends EventEmitter {
   createPeer(msg, initiator=true) {
     const peer = new SimplePeer({ initiator })
     peer.cid = msg.cid
-    console.log(`Peer Connected! ${peer.cid}`)
     this.peers.set(peer.cid, peer)
     peer.on('error', err => {
       this.emit('peer.error', err)
@@ -35,11 +34,14 @@ export default class WRTCSessionManager extends EventEmitter {
         type: 'signal',
         target: peer.cid,
         signal
-      });
-    });
-    peer.on('stream', stream => {
-      this.emit('peer.stream', stream)
+      })
     })
+    peer.on('stream', stream => {
+      this.emit('peer.stream', stream, peer)
+    })
+
+    this.emit('peer.connect', peer)
+
     return this;
   }
 
@@ -56,9 +58,10 @@ export default class WRTCSessionManager extends EventEmitter {
     switch (type) {
       case 'announce':
         this.createPeer(rest, true);
-        break;
+        break
       case 'signal':
         this.processSignal(rest)
+        break
       default:
         this.emit(type, rest)
     }
