@@ -10,16 +10,8 @@
     "dev": "docker build -f debian.Dockerfile -t browser-server . && docker run --rm -it --net=host --shm-size=\"1gb\" -p 8443:8443 browser-server -s \"wss://192.168.0.12:443\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/SimplyLinn/bunny.git"
-  },
   "author": "",
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/SimplyLinn/bunny/issues"
-  },
-  "homepage": "https://github.com/SimplyLinn/bunny#readme",
   "dependencies": {
     "argv-parse": "^1.0.1",
     "commander": "^3.0.1",

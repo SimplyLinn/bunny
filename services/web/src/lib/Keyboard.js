@@ -27,7 +27,9 @@
  * but for now, ease of development take priority as it's still early stages.
  * 
  */
-function Keyboard(element) {
+
+ // Further modified to be es6 export compatible
+export default function Keyboard(element) {
   /**
    * Reference to this Keyboard.
    * @private

@@ -73,6 +73,18 @@ export default function(props){
     vbController.mouseMove(...getMousePosition(e))
   }
 
+  const onMouseWheel = (e) => {
+    let btn
+    const ydir = Math.sign(e.deltaY);
+    const xdir = Math.sign(e.deltaX)
+    if(!xdir && !ydir) return
+    if(ydir < 0) btn = 4
+    if(ydir > 0) btn = 5
+    if(xdir < 0) btn = 6
+    if(xdir > 0) btn = 7
+    onMouseDown(e, btn)
+  }
+
   return (
     <VideoContainer>
       <video 
@@ -80,6 +92,7 @@ export default function(props){
         // width={1280}
         // height={720}
         autoPlay 
+        onWheel={(e)=>onMouseWheel(e)}
         onContextMenu={(e)=>onMouseDown(e, 3)}
         onScroll={(e)=>onMouseDown(e, 2)}
         onMouseDown={(e) => onMouseDown(e, 1)}

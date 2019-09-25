@@ -1,5 +1,5 @@
 {
-  "name": "frontend",
+  "name": "turt.us",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -14,10 +14,11 @@
     "react-dom": "^16.9.0",
     "react-router-dom": "^5.0.1",
     "react-scripts": "3.1.2",
+    "serve": "^11.1.0",
     "simple-peer": "^9.6.0"
   },
   "scripts": {
-    "serve" : "echo todo",
+    "serve": "serve -s build",
     "dev": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
