@@ -17,7 +17,8 @@
     "simple-peer": "^9.6.0"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "serve" : "echo todo",
+    "dev": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"

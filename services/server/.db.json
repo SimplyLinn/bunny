@@ -1,0 +1,17 @@
+{
+  "users": {
+    "a7a597df8a814070": {
+      "username": "khauri",
+      "email": "khauri7five7@gmail.com",
+      "password": "$2b$10$a7TOwIoSQqqwRGywpbby2eRMdXewBFFA8HbrR1nIVXOlXXmCGMMh."
+    }
+  },
+  "rooms": {
+    "cae6d60d-8acf-4558-8662-2b524225253a": {
+      "private": false,
+      "title": "Untitled Room",
+      "roomName": "kmart",
+      "owner": "a7a597df8a814070"
+    }
+  }
+}
