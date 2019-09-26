@@ -2,7 +2,7 @@ FROM node:12.10-slim
 USER root
 
 #==============
-# VNC and Xvfb
+# Xvfb and xdotool
 #==============
 RUN apt-get update && \
   apt-get clean \
@@ -13,7 +13,8 @@ RUN apt-get update && \
 
 #========================
 # Miscellaneous packages
-# Includes minimal runtime used for executing non GUI Java programs
+# Includes minimal runtime used for executing non GUI programs
+# TODO: Are all of these required?
 #========================
 RUN apt-get update && \
     apt-get -qqy --no-install-recommends install \
@@ -32,7 +33,7 @@ RUN apt-get update && \
     sudo
 
 #============================================
-# Browsers
+# Firefox and U-block origin
 #============================================
 RUN apt-get update && apt-get -y install firefox-esr
 
@@ -43,16 +44,26 @@ RUN mkdir -p /var/run/dbus
 #=================================
 RUN apt-get update && apt-get -y install pulseaudio socat alsa-utils consolekit
 # Workaround. See: http://blog.tigerteufel.de/?p=476
-RUN mkdir /tmp/.X11-unix
-RUN chmod 1777 /tmp/.X11-unix
-RUN chown root /tmp/.X11-unix/
+RUN mkdir /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix && chown root /tmp/.X11-unix/
+
+# Install ublock origin
+# this was originally going to be done through firefox policies
+# but that doesn't seem to be working
+# RUN mkdir -p /usr/lib/firefox-esr/distribution/extensions && \
+#   cd /usr/lib/firefox-esr/distribution/extensions && \
+#   wget -O uBlock0@raymondhill.net.xpi https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/addon-607454-latest.xpi 
 
 COPY package.json ./
 RUN yarn
-# Ensure file is executable
 COPY pulse-config.pa /bin
 COPY .babelrc ./
 COPY src/ ./src
+COPY firefox.policies.json /usr/lib/firefox-esr/distribution/policies.json
+
+# Add rc.xml to ~/root/.config/openbox
+# be aware that tilde expansion doesn't work in Dockerfiles
+COPY rc.xml /root/.config/openbox/rc.xml
+# COPY uBlock.json /usr/lib/firefox-esr/browser/extensions/uBlock0@raymondhill.net.json
 
 # ENTRYPOINT ["bash"]
-ENTRYPOINT [ "npm", "start", "--" ]
+ENTRYPOINT [ "yarn", "start" ]

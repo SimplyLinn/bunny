@@ -11,11 +11,13 @@
     "emotion-theming": "^10.0.19",
     "eventemitter3": "^4.0.0",
     "react": "^16.9.0",
+    "react-aspect-ratio": "^1.0.41",
     "react-dom": "^16.9.0",
     "react-router-dom": "^5.0.1",
     "react-scripts": "3.1.2",
     "serve": "^11.1.0",
-    "simple-peer": "^9.6.0"
+    "simple-peer": "^9.6.0",
+    "use-resize-observer": "^4.0.0"
   },
   "scripts": {
     "serve": "serve -s build",

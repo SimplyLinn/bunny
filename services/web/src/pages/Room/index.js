@@ -4,9 +4,11 @@ import WRTCSessionManager from '../../lib/SocketController'
 import VideoStream from '../../components/VideoStream'
 import Icon from '../../icon-lib'
 import VirtualBrowserController from '../../lib/BrowserController'
+import WaitingElement from './WaitingElement'
 
 // TODO: Collapse to 20px or so when in collapsed mode
 const ElementsContainer = styled.div`
+  flex : 0;
   flex-basis : 100px;
   color : white;
   display : flex;
@@ -40,15 +42,20 @@ export default function(props){
 
   useEffect(()=>{
     const manager = new WRTCSessionManager({server})
-    manager.addListener('peer.connect', (data)=>{
+    manager.on('open', async () => {
+      // const browserId = await VirtualBrowserController.createInstance()
+    })
+    manager.on('peer.connect', (data)=>{
       console.log(`Peer Connected: ${data}`)
     })
-    manager.addListener('peer.stream', (stream, peer)=>{
+    
+    manager.on('browser.stream', (stream, peer)=>{
       console.log('Stream Received', stream)
       setStreamSource(stream)
       // set the controller
       setVBController(new VirtualBrowserController(peer))
     })
+
     return () => manager.destroy()
   }, [server])
 
@@ -72,7 +79,7 @@ export default function(props){
   return (
     <RoomContainer ref={ref}>
       <VideoStream source={streamSource} vbController={vbController}>
-        <div>Waiting....</div>
+        <WaitingElement />
       </VideoStream>
       <ElementsContainer>
         <button onClick={toggleFullscreen}>

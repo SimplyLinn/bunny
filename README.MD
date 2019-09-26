@@ -19,7 +19,9 @@ Running the container locally is covered later.
 
 ## Running Locally
 
-Ensure you have docker, node, and yarn installed with:
+Although it defeats the purpose of this project, you can run the entire thing locally in very little time. Warning: this resource intensive project may shorten your computer's lifespan.
+
+First ensure you have docker, node, and yarn installed with:
 
 ```sh
 docker -v 
@@ -29,13 +31,20 @@ node -v
 yarn -v
 # x.xx.x
 ```
+### Build the docker image
 
-For now the application is run in three separate steps. In the future, the app will 
-be deployable using only one command and new virtual browser docker containers will 
-be created from the backend.
+```sh
+# in your favorite terminal application
+cd ./services/virtual-browser
+# build
+yarn build:docker
+```
 
-### Step 1
+The will create an image named `virtual-browser`. If you would like to name it something else, then just run the normal docker commands and make sure to set the image name in the configuration.
 
+### Step 2
+
+Run the server.
 First start the server. This will expose a port on the local machine.
 The signal server requires certificates in order for the virtual-browser to connect to it.
 Probably will use certbot to generate on the fly in the future.
@@ -121,6 +130,27 @@ For now there is only one client application: a responsive web application that 
 
 The app is built using React.
 
+## Emojis in Code? Why? 
+
+They can convey meaning quickly without having to read. Here's a quick dictionary:
+- 🙂Success
+- 🤔Info / Warning 
+- 👎Non-Fatal Error
+- ☠️Fatal Error
+
+## Connection Algorithm 
+
+p2p connections are negotiated over the signal server and work as follows:
+
+1. A client connects to the signal server via websocket url
+2. The signal server sends the client an `identity` packet
+  - This packet will be attached to every outgoing message. 
+3. One or more clients subsequently connect to the websocket url 
+4. The server negotiates the handshake between existing clients and the new client
+5. All old clients ask the new client to identify their client type
+6. If the client type is `vb` then a client must specifically ask for the stream by providing a `request.stream` packet.
+7. Otherwise the client is automatically sent the stream.
+
 ## Resources
 
 [Break monolith app into microservices](https://aws.amazon.com/getting-started/projects/break-monolith-app-microservices-ecs-docker-ec2/)
@@ -130,3 +160,5 @@ The app is built using React.
 [Making and trusting your own certificates](https://letsencrypt.org/docs/certificates-for-localhost/)
 
 [Certbot certificate creation docker tutorial](https://techsparx.com/nodejs/docker/express-https.html)
+
+[aws-js-api](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/ECS.html#constructor-property)

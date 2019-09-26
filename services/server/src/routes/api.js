@@ -4,21 +4,43 @@ const createError = require('http-errors')
 const bcrypt = require('bcrypt')
 const uuid = require('uuid')
 
-const { db } = require('../database-loader')
+const { db, docker } = require('../database-loader')
 
-const requireArgs = (body=[], query=[], params=[]) => (req, res, next) => {
+const requireArgs = (body=[], query=[]) => (req, res, next) => {
   if(body.some(a=>!Boolean(req.body[a]))) 
     return next(createError(400,  `Expected [${body.join(", ")}] in body`))
   if(query.some(a=>!Boolean(req.query[a]))) 
-    return next(createError(400,  `Expected [${query.join(", ")}] in body`))
-  if(params.some(a=>!Boolean(req.params[a]))) 
-    return next(createError(400,  `Expected [${params.join(", ")}] in body`))
+    return next(createError(400,  `Expected [${query.join(", ")}] in query`))
   return next()
 }
 
 router.get('/', (req, res, next) => {
   res.json(new Date())
 })
+
+// TODO: lock creation behind some kind of access token
+router.route('/virtual_browser/start')
+  .get(async (req, res, next)=>{
+    try {
+      // TODO: store container id in db and return different id (for security)
+      const id = await docker.start()
+      res.json({ message:'👍 Browser Created', id })
+    } catch (e) {
+      // TODO: custom error types
+      next(createError(500, '👎 Browser Failed to start'))
+    }
+  })
+router.route('/virtual_browser/stop')
+  .get(requireArgs([], ['cid']), 
+  async (req, res, next) => {
+    const { cid } = req.query
+    try {
+      await docker.stop(cid)
+      res.json({message:'💥 Browser Destroyed'})
+    }catch(e){
+      next(createError(500, '👎 Browser failed to stop or is already stopped'))
+    }
+  })
 
 router.route('/user')
   .post(
@@ -106,7 +128,7 @@ router
   //   // TODO: If all peers disconnect, stop the container
   // })
 
-router.use((err, req, res)=>{
+router.use(function(err, req, res, next){
   const status = err.status || 500
   const message = err.message || 'Internal Server Error'
   return res.status(status).json({ status, message })

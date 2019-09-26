@@ -1,3 +1,6 @@
+# Production folders
+/build
+
 # Logs
 logs
 *.log

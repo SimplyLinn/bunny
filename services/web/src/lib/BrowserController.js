@@ -1,5 +1,11 @@
 import InstructionBuffer, { opCodes } from './InstructionBuffer'
 // import Keyboard from './keyboard'
+const URLS = {
+  // TODO: Get this URL from a configuration file / environment variable
+  BASE : 'https://localhost',
+  VB_START : '/virtual_browser/start',
+  VB_STOP : '/virtual_browser/stop'
+}
 
 // TODO: Send updates from instruction buffer periodically(?)
 export default class VirtualBrowserController {
@@ -8,6 +14,14 @@ export default class VirtualBrowserController {
     // TODO: Not sure what the following is for yet
     // this.keyboard = new Keyboard(input)
   }
+
+  static async createInstance(){
+    // create the browser
+    const result = await fetch(URLS.BASE+URLS.VB_START)
+    console.log(result.status)
+    return result.status > 199 && result.status < 300
+  }
+
   mouseUp(x, y, btn){
     this.vbClient.send(JSON.stringify({
       type : 'mouseUp',
@@ -38,6 +52,7 @@ export default class VirtualBrowserController {
     }))
   }
   keyDown(key){
+    console.log(key)
     // if(!vidFocus) return false;
     // const inst = new InstructionBuffer(opCodes.KEY_DOWN, 2);
     // inst.writeUint16(key);
@@ -46,7 +61,9 @@ export default class VirtualBrowserController {
       args : [key],
     })
   }
+
   keyUp(key){
+    console.log(key)
     // if(!vidFocus) return false;
     // const inst = new InstructionBuffer(opCodes.KEY_UP, 2);
     // inst.writeUint16(key);

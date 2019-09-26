@@ -2,6 +2,7 @@ const HTTPS_PORT = process.env.PORT || 443
 const HTTP_PORT = 80
 
 const expressWs = require('express-ws')
+const cors = require('cors')
 const fs = require('fs')
 const uuid = require('uuid/v4')
 const https = require('https')
@@ -27,15 +28,17 @@ app.use (function (req, res, next) {
 })
 // WRTC Signal Server with SSL 
 const server = https.createServer({
-  key : fs.readFileSync('./localhost.key', 'utf-8'),
- cert : fs.readFileSync('./localhost.cert', 'utf-8')
+  key : fs.readFileSync(`${__dirname}/config/localhost.key`, 'utf-8'),
+ cert : fs.readFileSync(`${__dirname}/config/localhost.cert`, 'utf-8')
 }, app)
 //
 // Start the server.
 //
 ;(async () => {
   await db.init()
-  await docker.init()
+  await docker.init({
+    signalServer : 'wss://192.168.0.12/'
+  })
   server.listen(HTTPS_PORT, () => {
     console.log(`Listening on https://localhost:${HTTPS_PORT}`);
   })
@@ -43,15 +46,28 @@ const server = https.createServer({
 
 expressWs(app, server)
 
+app.use(cors())
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'src', 'public')));
 
-app.use('/', apiRouter);
+app.use('/', apiRouter)
 
 const clients = new Map()
+
+const EVENT_TYPES = {
+  STREAM : {
+    REQUEST : 'stream/request',
+    READY : 'stream/ready'
+  },
+  IDENTITY : {
+    PROVIDE : 'identity/provide',
+    REQUEST : 'identity/request',
+    RESPONSE : 'identity/response'
+  }
+}
 
 app.ws('/', function(client, req){
   // TODO: factor in user accounts?
@@ -63,6 +79,13 @@ app.ws('/', function(client, req){
       cid : id
     })
   ))
+
+  // Notify client of its own id
+  client.send(JSON.stringify({
+    type : EVENT_TYPES.IDENTITY.PROVIDE,
+    id
+  }))
+
   clients.set(id, client)
   client.on('message', function(msg){
     msg = JSON.parse(msg)
@@ -93,7 +116,8 @@ app.ws('/', function(client, req){
 app.use(function(err, req, res, next) {
   // set locals, only providing error in development
   res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+  res.locals.error = req.app.get('env') === 'development' ? err : {}
+  console.error(err)
   res.status(err.status || 500).json(err.status || 500);
 })
 

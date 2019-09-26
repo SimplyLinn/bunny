@@ -7,7 +7,8 @@
   "scripts": {
     "start": "yarn build && node ./build/index.js",
     "build" : "babel src -d build",
-    "dev": "docker build -f debian.Dockerfile -t browser-server . && docker run --rm -it --net=host --shm-size=\"1gb\" -p 8443:8443 browser-server -s \"wss://192.168.0.12:443\"",
+    "build:docker": "docker build -f Dockerfile -t virtual-browser .",
+    "dev": " yarn build:docker && docker run --rm -it --net=host --shm-size=\"1gb\" virtual-browser -s \"wss://192.168.0.12:443\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",

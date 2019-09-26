@@ -67,19 +67,13 @@ export default class VirtualBrowser extends ProcessBus {
   }
 
   _createSources(){
-    // This next line closes the program without throwing an error on alpine
-    const videoFrame = { 
-      width  : this.width, 
-      height : this.height, 
-      data   : null 
-    }
-
     const audioData = { 
       sampleRate    : 44100, 
       channelCount  : 2, 
       samples       : null 
     }
-
+    
+    // This next line closes the program without throwing an error on alpine
     this.vidSource = new wrtc.nonstandard.RTCVideoSource()
     this.vidTrack = this.vidSource.createTrack()
     
@@ -173,15 +167,15 @@ export default class VirtualBrowser extends ProcessBus {
    * Get a stream for a peer(?)
    * @param {*} peer 
    */
-  getStream(peer) {
+  getStream() {
     // const audSource = new wrtc.nonstandard.RTCAudioSource()
     // this.audSources.add(audSource);
     // const audTrack = audSource.createTrack()
     const stream = new wrtc.MediaStream([this.vidTrack /*, audTrack */])
-    peer.on('close', () => {
+    // peer.on('close', () => {
       // this.audSources.delete(audSource);
       // audTrack.stop();
-    });
+    // });
     return stream;
   }
 
