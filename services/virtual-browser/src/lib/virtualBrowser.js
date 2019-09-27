@@ -8,7 +8,13 @@ import InstructionReader from './instructionReader'
 
 
 function keyRemapper(key) {
+  return {
+    ' ':'space',
+    '`':'0xff80'
+  }[key] || key
   switch(key) {
+    case '':
+      break 
     case ' ':
       key = '0xff80'
       break
@@ -127,27 +133,29 @@ export default class VirtualBrowser extends ProcessBus {
   }
 
   mouseMove(x, y){
-    this.writeCommand(`mousemove ${x} ${y}`)
+    return this.writeCommand(`mousemove ${x} ${y}`)
   }
 
   mouseDown(x, y, btn){
     this.mouseMove(x, y)
-    this.writeCommand(`mousedown ${btn}`)
+    if(btn < 4 || btn > 7)
+      return this.writeCommand(`mousedown ${btn}`)
+    return this.writeCommand(`click ${btn}`)
   }
 
   mouseUp(x, y, btn){
     this.mouseMove(x, y)
-    this.writeCommand(`mouseup ${btn}`)
+    return this.writeCommand(`mouseup ${btn}`)
   }
 
   keyDown(key){
     const mappedKey = keyRemapper(key)
-    this.writeCommand(`keydown ${mappedKey}`)
+    return this.writeCommand(`keydown ${mappedKey}`)
   }
 
   keyUp(key){
     const mappedKey = keyRemapper(key)
-    this.writeCommand(`keyup ${mappedKey}`)
+    return this.writeCommand(`keyup ${mappedKey}`)
   }
 
   toggleInput(bool){
@@ -156,6 +164,7 @@ export default class VirtualBrowser extends ProcessBus {
 
   writeCommand(command){
     if(this.ignoreInput || !this.inputStream) return false
+    // console.log(`writing command: ${command}`)
     this.inputStream.write(`${command}\n`)
   }
 

@@ -12,6 +12,7 @@
     "eventemitter3": "^4.0.0",
     "react": "^16.9.0",
     "react-aspect-ratio": "^1.0.41",
+    "react-css-loaders": "^0.0.5",
     "react-dom": "^16.9.0",
     "react-router-dom": "^5.0.1",
     "react-scripts": "3.1.2",

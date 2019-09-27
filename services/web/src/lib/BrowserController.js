@@ -36,6 +36,7 @@ export default class VirtualBrowserController {
    * middle-left (6), middle-right (7), browser-back (8), browser-forward (0)
    */
   mouseDown(x, y, btn){
+    console.log('MouseDown', x, y, btn)
     this.vbClient.send(JSON.stringify({
       type : 'mouseDown',
       args : [x, y, btn]
@@ -52,24 +53,22 @@ export default class VirtualBrowserController {
     }))
   }
   keyDown(key){
-    console.log(key)
     // if(!vidFocus) return false;
     // const inst = new InstructionBuffer(opCodes.KEY_DOWN, 2);
     // inst.writeUint16(key);
-    this.vbClient.send({
+    this.vbClient.send(JSON.stringify({
       type: 'keyDown',
       args : [key],
-    })
+    }))
   }
 
   keyUp(key){
-    console.log(key)
     // if(!vidFocus) return false;
     // const inst = new InstructionBuffer(opCodes.KEY_UP, 2);
     // inst.writeUint16(key);
-    this.vbClient.send({
-      type: 'keyDown',
+    this.vbClient.send(JSON.stringify({
+      type: 'keyUp',
       args : [key],
-    })
+    }))
   }
 }

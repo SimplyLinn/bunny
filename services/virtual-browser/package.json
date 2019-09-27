@@ -7,8 +7,10 @@
   "scripts": {
     "start": "yarn build && node ./build/index.js",
     "build" : "babel src -d build",
-    "build:docker": "docker build -f Dockerfile -t virtual-browser .",
-    "dev": " yarn build:docker && docker run --rm -it --net=host --shm-size=\"1gb\" virtual-browser -s \"wss://192.168.0.12:443\"",
+    "predocker-build" : "cp -fp ../../.env .",
+    "docker-build": "docker build -f Dockerfile -t turtus-browser .",
+    "postdocker-build" : "rm .env",
+    "docker-start": " yarn docker-build && docker run --rm -it --net=host --shm-size=\"1gb\" turtus-browser -s \"wss://192.168.0.12:443\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",

@@ -1,5 +1,6 @@
 import SimplePeer from 'simple-peer'
 import EventEmitter from 'eventemitter3'
+import ServerController from './ServerController'
 
 const EVENT_TYPES = {
   STREAM : {
@@ -124,7 +125,8 @@ export default class WRTCSessionManager extends EventEmitter {
     peer.send(this.createPacket(EVENT_TYPES.STREAM.REQUEST))
   }
 
-  init(){
+  async init(){
+    await ServerController.ping()
     // console.log(this.signalServer)
     this.connection = new WebSocket(this.signalServer)
     // eslint-disable-next-line

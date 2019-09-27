@@ -76,10 +76,17 @@ export default function(props){
     })
   }
 
+  // Create a virtual browser in this room
+  const onRequestBrowser = async () => {
+    console.log('onRequestBrowser')
+    const browserId = await VirtualBrowserController.createInstance()
+    console.log(browserId)
+  }
+
   return (
     <RoomContainer ref={ref}>
       <VideoStream source={streamSource} vbController={vbController}>
-        <WaitingElement />
+        <WaitingElement onRequestBrowser={onRequestBrowser}/>
       </VideoStream>
       <ElementsContainer>
         <button onClick={toggleFullscreen}>

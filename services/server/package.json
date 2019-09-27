@@ -5,7 +5,11 @@
   "main": "./src/app.js",
   "scripts": {
     "start": "cross-env NODE_ENV=production .",
-    "dev": "cross-env NODE_ENV=development nodemon ."
+    "dev": "cross-env NODE_ENV=development nodemon .",
+    "predocker-build" : "cp -fp ../../.env .",
+    "docker-build": "docker build -f Dockerfile -t turtus-server .",
+    "postdocker-build" : "rm .env",
+    "docker-start" : "yarn docker-build && docker run --rm -it --net=host --shm-size=\"1gb\" turtus-server"
   },
   "dependencies": {
     "aws-sdk": "^2.535.0",
@@ -15,6 +19,7 @@
     "cross-env": "^6.0.0",
     "debug": "~2.6.9",
     "dockerode": "^3.0.1",
+    "dotenv": "^8.1.0",
     "express": "~4.16.1",
     "express-session": "^1.16.2",
     "express-ws": "^4.0.0",
@@ -23,10 +28,8 @@
     "lowdb": "^1.0.0",
     "morgan": "~1.9.1",
     "nodemon": "^1.19.2",
+    "socket.io": "^2.3.0",
     "uuid": "^3.3.3",
     "ws": "^7.1.2"
-  },
-  "resolutions": {
-    "minipass": "2.7.0"
   }
 }

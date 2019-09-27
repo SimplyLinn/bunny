@@ -1,16 +1,26 @@
-const StorageDriver = require('./DatabaseDriver')
 const low = require('lowdb')
+const session = require('express-session')
 const fileAsync = require('lowdb/adapters/FileAsync')
+const StorageDriver = require('./StorageDriver')
+
 module.exports = class LocalDatabaseDriver extends StorageDriver {
+  constructor(...args){
+    super(...args)
+  }
+
   async init(options={}){
     const {
       location = `${process.cwd()}/.db.json`
     } = options
     this.db = await low(new fileAsync(location))
     this.db.defaults({
-      users : {},
-      rooms : {}
+      'users' : {},
+      'rooms' : {}
     })
+  }
+
+  getSessionStore(){
+    return new session.MemoryStore()
   }
 
   find(path, query){
@@ -18,7 +28,6 @@ module.exports = class LocalDatabaseDriver extends StorageDriver {
   }
 
   get(path){
-    console.log('Hello world')
     return this.db.get(path.path.join('.')).value()
   }
 

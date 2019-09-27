@@ -1,24 +1,4 @@
 /**
- * Very simple QueryBuilder interface
- */
-class QueryBuilder {
-  constructor(command, driver){
-    this.driver = driver
-    this.command = command
-    this.query = []
-  }
-
-  where(key, op, value){
-    this.query.push([key, op, value])
-    return this
-  }
-
-  exec(){
-    return this.driver.execQuery(this.command, this.query)
-  }
-}
-
-/**
  * StorageDriver interface
  * This is inteded to provide a decoupling 
  * of the database services from the needs 
@@ -38,18 +18,13 @@ module.exports = class StorageDriver {
       path : str.replace(/\/+/g,"/").replace(/^\//,"").split('/').filter(Boolean)
     }
   }
-
-  execQuery(command, query){
-    this[command](query)
-  }
-
+  /**
+   * Initialize the db driver. E.g., the sessionStore?
+   */
   async init(){
-    throw new Error('Not Implemented')
+    
   }
 
-  async find(){
-    throw new Error('Not Implemented')
-  }
   /**
    * Serializes data into a database using a given path
    * and returns true. Rejects with an error otherwise.
@@ -60,6 +35,7 @@ module.exports = class StorageDriver {
   async set(path, data){
     throw new Error('Not Implemented')
   }
+
   /**
    * Retrieves data from the database. 
    * 
@@ -78,6 +54,7 @@ module.exports = class StorageDriver {
   async update(path, data){
     throw new Error('Not Implemented')
   }
+  
   /**
    * Delete item at location
    * @param {*} path 
@@ -95,5 +72,12 @@ module.exports = class StorageDriver {
   async exists(path){
     const item = await this.get(path)
     return typeof item !== 'undefined' && item !== null
+  }
+
+  /**
+   * Method to get and initialize the sessionStore
+   */
+  getSessionStore(){
+    return this.sessionStore || undefined
   }
 }
