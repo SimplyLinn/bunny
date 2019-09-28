@@ -6,8 +6,8 @@ const config = dotenv.config({
   debug : process.env.TURTUS_DEBUG_ENV,
   path : dotEnvPath
 })
-// convert things that look like num
 for(let [key, value] of Object.entries(config.parsed)){
+  value = process.env[key] || value
   try {
     config.parsed[key] = JSON.parse(value)
   } catch(e) {
