@@ -1,4 +1,4 @@
-import config from './conf'
+import config from './config'
 import VirtualBrowser from './lib/virtualBrowser'
 import WrtcClient from './lib/wrtcClient'
 

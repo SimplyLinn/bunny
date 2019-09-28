@@ -1,8 +1,11 @@
 FROM node:12.10-slim
 USER root
 
+
 WORKDIR /bunny-server
 
+# TODO: introduce a build stage to install bcrypt since it needs python 
+# in order to be built
 RUN apt-get update && \
     apt-get install -y build-essential python
 
