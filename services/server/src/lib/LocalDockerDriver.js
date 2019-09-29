@@ -110,7 +110,6 @@ module.exports = class LocalDockerDriver extends DockerDriverInterface {
   }
 
   async stop(id){
-    console.log('Stopping local docker instance')
     const container = await this.docker.getContainer(id)
     container.stop()
     this.containers.delete(id)

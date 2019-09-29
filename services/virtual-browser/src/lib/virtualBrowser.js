@@ -59,6 +59,7 @@ export default class VirtualBrowser extends ProcessBus {
       height   = 720, 
       bitDepth = 24, 
       display  = 20,
+      defaultUrl = "https://www.google.com",
     } = options
 
     this.width = width
@@ -67,6 +68,7 @@ export default class VirtualBrowser extends ProcessBus {
     this.display = display
     this.ignoreInput = ignoreInput
     this.inputStream = null
+    this.defaultUrl = defaultUrl
     this.env = { DISPLAY : display }
     this.instructionReader = new InstructionReader()
     this._createSources()
@@ -118,7 +120,10 @@ export default class VirtualBrowser extends ProcessBus {
     // Should be possible to launch the following in parallel 
     await this.spawnProcess('openbox', openbox)
     // await this.spawnProcess('pulse-audio', pulseAudio, [this.env.DISPLAY])
-    await this.spawnProcess('firefox', firefox, [this.width, this.height])
+    await this.spawnProcess('firefox', firefox, [
+      this.width, this.height,
+      this.defaultUrl
+    ])
     // firefox(this.env, this.width, this.height);
     // this.xdoin = xdotool(this.env).stdin;
     await this.spawnProcess('xdo', xdotool)

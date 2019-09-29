@@ -5,12 +5,12 @@ export const firefox = new ProcessSpawner({
   shell : true,
   timeout : 500,
   errorOnTimeout : false,
-  args : (env, [width, height]) => [
+  args : (env, [width, height, url='']) => [
     `--display=:${env.DISPLAY}`, 
     '--setDefaultBrowser',
     '-width', width,
     '-height', height,
-    'https://www.youtube.com/'
+    url
   ],
 
   output : {

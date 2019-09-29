@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import styled from '@emotion/styled'
-import WRTCSessionManager from '../../lib/SocketController'
+import WRTCSessionManager, {EVENT_TYPES} from '../../lib/SocketController'
 import VideoStream from '../../components/VideoStream'
 import Icon from '../../icon-lib'
 import VirtualBrowserController from '../../lib/BrowserController'
@@ -45,16 +45,22 @@ export default function(props){
     manager.on('open', async () => {
       // const browserId = await VirtualBrowserController.createInstance()
     })
-    manager.on('peer.connect', (data)=>{
-      console.log(`Peer Connected: ${data}`)
+    manager.on(EVENT_TYPES.PEER_CONNECT, (peer) => {
+      console.log(`Peer Connected: ${peer.id}`)
     })
     
-    manager.on('browser.stream', (stream, peer)=>{
+    manager.on('browser.stream', (peer, stream)=>{
       console.log('Stream Received', stream)
       setStreamSource(stream)
       // set the controller
       setVBController(new VirtualBrowserController(peer))
     })
+
+    ;(async()=>{
+      await manager.init()
+      console.log('Initialized')
+      // setInitialized()
+    })()
 
     return () => manager.destroy()
   }, [server])

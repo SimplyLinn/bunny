@@ -1,9 +1,8 @@
-// TODO: This should serve as a core module for any js based tutus client
-// but I still need to remove some specific dependencies
-
+// TODO: Use Socket.io instead?
+import wrtc from 'wrtc'
+import WebSocket from 'ws'
 import SimplePeer from 'simple-peer'
 import EventEmitter from 'eventemitter3'
-import ServerController from './ServerController'
 
 export const EVENT_TYPES = {
   STREAM : {
@@ -18,26 +17,26 @@ export const EVENT_TYPES = {
   ANNOUNCE : 'announce',
   SIGNAL : 'signal',
   PEER_CONNECT : 'peer/connect',
-  PEER_DISCONNECT : 'peer/disconnect'
+  PEER_DISCONNECT : 'peer/disconnect',
+  PEER_MESSAGE : 'peer/message'
 }
 
 export default class WRTCSessionManager extends EventEmitter {
-  constructor(options = {}){
+  constructor(options={}) {
     super()
     const { 
-      server,
-      signalServer = server
+      signalServer,
     } = options
     this.id = null // set by signal server
-    this.clientType = 'client'
+    this.clientType = 'vb'
     this.signalServer = signalServer
-    this.ws = null // set in init function
+    this.ws = null
     /** @type {Map<string, SimplePeer.Instance>} */
     this.peers = new Map()
     this._complete = null // set in init
   }
 
-  /**
+ /**
    * Establiashes the Websocket connection to our 
    * server and attaches events.
    * @returns {Promise<void>}
@@ -46,12 +45,14 @@ export default class WRTCSessionManager extends EventEmitter {
     if(this.ws){
       return Promise.reject('init already called')
     }
-    return new Promise(async (res, rej)=>{
-      // ping server 
-      await ServerController.ping()
+    return new Promise((res, rej)=>{
+      // TODO: ping server
       // establish websocket connection
-      this.ws = new WebSocket(this.signalServer)
-      // setup event listeners
+      this.ws = new WebSocket(this.signalServer, {
+        perMessageDeflate: false,
+        rejectUnauthorized: false,
+      })
+
       this.ws.addEventListener(   'open', (e) => this._onServerConnection(e))
       this.ws.addEventListener(  'close', (e) => this._onServerClose(e))
       this.ws.addEventListener(  'error', (err) => this._onServerError(err))
@@ -71,7 +72,6 @@ export default class WRTCSessionManager extends EventEmitter {
     const data = JSON.parse(message.data)
     // console.log(data, ...args)
     const { type, ...rest } = data
-    console.log('[Server]', type, rest)
     switch (type) {
       case EVENT_TYPES.IDENTITY.PROVIDE:
         this._setIdentity(rest)
@@ -92,15 +92,21 @@ export default class WRTCSessionManager extends EventEmitter {
     console.log('Connected To Server')
   }
 
-  _onServerClose(err){
+  _onServerClose(){
     console.log('Disconnected From Server')
-    // this._complete(err)
   }
 
   _onServerError(err){
     console.log(err)
   }
 
+  /**
+   * When SimplePeer emits a 'signal' event we ask the server
+   * to send the event to the other client via our websocket 
+   * connection.
+   * @param {*} peer 
+   * @param {*} signal 
+   */
   _onPeerSignal(peer, signal){
     this.ws.send(JSON.stringify({
       type: 'signal',
@@ -144,17 +150,12 @@ export default class WRTCSessionManager extends EventEmitter {
   _onPeerStream(peer, stream){
     // TODO: Identify the stream type 
     console.log(stream, peer)
-    this.emit('browser.stream', peer, stream)
+    this.emit('browser.stream', stream, peer)
   }
 
-  /**
-   * Announce peer
-   * @param {*} msg 
-   * @param {*} initiator 
-   */
   _announce(msg, initiator=true) {
-    const peer = new SimplePeer({ initiator })
-    peer.id = msg.id || msg.cid
+    const peer = new SimplePeer({ wrtc, initiator })
+    peer.id = msg.id || msg.cid || msg.sender
     console.log('Peer Announced(?)', peer.id)
     this.peers.set(peer.id, peer)
 
@@ -204,12 +205,15 @@ export default class WRTCSessionManager extends EventEmitter {
   [EVENT_TYPES.STREAM.READY](peer, data){
     // Request the stream when it's ready
     this.emit(EVENT_TYPES.STREAM.READY)
-    peer.send(this.package(EVENT_TYPES.STREAM.REQUEST))
+    // peer.send(this.package(EVENT_TYPES.STREAM.REQUEST))
   }
 
-  [EVENT_TYPES.IDENTITY.REQUEST](peer, data){
+  /**
+   * Returns the identity of this client when requested
+   * @param {*} msg 
+   */
+  [EVENT_TYPES.IDENTITY.REQUEST](peer){
     console.log('Identity Request Recieved From', peer.id)
-    console.log(data)
     const pData = {
       clientType : this.clientType
     }

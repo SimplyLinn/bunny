@@ -79,5 +79,5 @@ COPY src/ ./src
 COPY rc.xml /root/.config/openbox/rc.xml
 # COPY uBlock.json /usr/lib/firefox-esr/browser/extensions/uBlock0@raymondhill.net.json
 
-ENTRYPOINT ["bash"]
-# ENTRYPOINT [ "yarn", "start" ]
+# ENTRYPOINT ["bash"]
+ENTRYPOINT [ "yarn", "start" ]
