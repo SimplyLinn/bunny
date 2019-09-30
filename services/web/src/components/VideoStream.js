@@ -2,41 +2,6 @@ import React, { useRef, useState, useEffect } from 'react'
 import AspectRatio from 'react-aspect-ratio'
 import styled from '@emotion/styled'
 
-
-const Container = styled.div`
-  flex : 1;
-  position : relative;
-  padding : 20px 20px 0 20px;
-  & video {
-    width : 100%;
-    // background : black;
-  }
-  .waiting-component {
-    position : absolute;
-    top : 0;
-    bottom : 0;
-    left : 0;
-    right : 0;
-  }
-  & .click-shield {
-    position : absolute;
-    outline : none;
-    top : 0;
-    left : 0;
-    right : 0;
-    bottom : 3px;
-    box-sizing : content-box;
-    transition : 500ms all ease-in-out;
-    box-shadow: 0 0 0 transparent;
-    ${({focused})=>{
-      if(!focused) return ''
-      return `
-        box-shadow: 0 0 30px rgba(255,255,255,0.2);
-      `
-    }}
-  }
-`
-
 export default function(props){
   const { 
     source,
@@ -137,28 +102,26 @@ export default function(props){
   }
   // idea: when vidContainerInner size changes, dynamically change video size too
   return (
-    <Container className={'container'} focused={focused} fullscreen={fullscreen}>
-      <AspectRatio ratio={aspectRatio} style={{ maxWidth: '1280px', margin : 'auto', position:'relative' }}>
-        <>
-        <video ref={ref} autoPlay />
-        <div 
-          tabIndex="0"
-          hidden={!source}
-          className={'click-shield'}
-          ref={controllerRef}
-          onMouseEnter={()=>setFocused(true)}
-          onMouseLeave={()=>setFocused(false)}
-          onWheel={(e)=>onMouseWheel(e)}
-          onKeyDown={onKeyDown}
-          onKeyUp={onKeyUp}
-          onContextMenu={(e)=>onMouseDown(e, 3)}
-          onMouseDown={(e) => onMouseDown(e, 1)}
-          onMouseUp={(e) => onMouseUp(e, 1)}
-          onMouseMove={onMouseMove}
-        />
-        </>
-      </AspectRatio>
+    <AspectRatio ratio={aspectRatio} style={{ maxWidth: '1280px', position:'relative', flex : 1 }}>
+      <>
+      <video ref={ref} autoPlay />
+      <div 
+        tabIndex="0"
+        hidden={!source}
+        className={'click-shield'}
+        ref={controllerRef}
+        onMouseEnter={()=>setFocused(true)}
+        onMouseLeave={()=>setFocused(false)}
+        onWheel={(e)=>onMouseWheel(e)}
+        onKeyDown={onKeyDown}
+        onKeyUp={onKeyUp}
+        onContextMenu={(e)=>onMouseDown(e, 3)}
+        onMouseDown={(e) => onMouseDown(e, 1)}
+        onMouseUp={(e) => onMouseUp(e, 1)}
+        onMouseMove={onMouseMove}
+      />
       { !source && <div className={'waiting-component'}>{children}</div> }
-    </Container>
+      </>
+    </AspectRatio>
   )
 }

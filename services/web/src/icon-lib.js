@@ -12,7 +12,10 @@ import {
   faComment,
   faCommentSlash,
   faMousePointer,
-  faStopCircle
+  faStopCircle,
+  faLaptop,
+  faLink,
+  faRobot
 } from '@fortawesome/free-solid-svg-icons'
 
 library.add(
@@ -27,7 +30,10 @@ library.add(
   faComment,
   faCommentSlash,
   faMousePointer,
-  faStopCircle
+  faStopCircle,
+  faLaptop,
+  faLink,
+  faRobot
 )
 
 export default Icon

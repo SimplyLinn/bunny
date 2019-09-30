@@ -6,32 +6,59 @@ import VideoStream from '../../components/VideoStream'
 import Icon from '../../icon-lib'
 import VirtualBrowserController from '../../lib/BrowserController'
 import WaitingElement from './WaitingElement'
+import ChatItem from './ChatItem'
+import Chat from './Chat'
 
 // Debug purposes 
 window.turtus = turtus
 
 // TODO: Collapse to 20px or so when in collapsed mode
 const ElementsContainer = styled.div`
-  flex : 0;
-  flex-basis : 100px;
+  flex :.3;
   color : white;
-  display : flex;
-  & button {
-    cursor : pointer;
-    background : transparent;
-    outline : none;
-    color : white;
-    border : none;
-    padding : 5px;
-    font-size : 24px;
-  }
+  // background : ${({theme})=>theme.lighten.x1};
 `
 
 const RoomContainer = styled.div`
   flex : 1;
   height : 100%;
   display : flex;
+  flex-direction : row;
+`
+const Container = styled.div`
+  flex : 1;
+  position : relative;
+  display : flex;
   flex-direction : column;
+  // padding : 20px 20px 0 20px;
+  & video {
+    width : 100%;
+    background : black;
+  }
+  .waiting-component {
+    position : absolute;
+    top : 0;
+    bottom : 3px;
+    left : 0;
+    right : 0;
+  }
+  & .click-shield {
+    position : absolute;
+    outline : none;
+    top : 0;
+    left : 0;
+    right : 0;
+    bottom : 3px;
+    box-sizing : content-box;
+    transition : 500ms all ease-in-out;
+    box-shadow: 0 0 0 transparent;
+    ${({focused})=>{
+      if(!focused) return ''
+      return `
+        box-shadow: 0 0 30px rgba(255,255,255,0.2);
+      `
+    }}
+  }
 `
 
 export default function(props){
@@ -102,14 +129,15 @@ export default function(props){
 
   return (
     <RoomContainer ref={ref}>
-      <VideoStream source={streamSource} vbController={vbController}>
-        <WaitingElement onRequestBrowser={onRequestBrowser}/>
-      </VideoStream>
       <ElementsContainer>
-        <button onClick={toggleFullscreen}>
-          <Icon icon='expand'/>
-        </button>
+        <ChatItem />
       </ElementsContainer>
+      <Container className={'container'}>
+        <VideoStream source={streamSource} vbController={vbController}>
+          <WaitingElement onRequestBrowser={onRequestBrowser}/>
+        </VideoStream>
+        <Chat />
+      </Container>
     </RoomContainer>
   )
 }

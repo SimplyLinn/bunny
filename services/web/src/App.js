@@ -14,7 +14,7 @@ const AppContainer = styled.div`
   width : 100vw;
   height : 100vh;
   display : flex;
-  flex-direction : row;
+  flex-direction : column;
   background : ${({theme})=>theme.background.primary};
 `
 
@@ -24,7 +24,7 @@ const RouteContainer = styled.div`
 `
 
 const NavbarContainer = styled.div`
-  min-width : 65px;
+  min-height : 65px;
   box-sizing : content-box;
   order : 0;
   background : ${({theme})=>theme.background.secondary};
