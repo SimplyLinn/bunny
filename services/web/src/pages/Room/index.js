@@ -1,10 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react'
 import styled from '@emotion/styled'
-import WRTCSessionManager, {EVENT_TYPES} from '../../lib/SocketController'
+import turtus from 'turtus/core'
+
 import VideoStream from '../../components/VideoStream'
 import Icon from '../../icon-lib'
 import VirtualBrowserController from '../../lib/BrowserController'
 import WaitingElement from './WaitingElement'
+
+// Debug purposes 
+window.turtus = turtus
 
 // TODO: Collapse to 20px or so when in collapsed mode
 const ElementsContainer = styled.div`
@@ -41,11 +45,17 @@ export default function(props){
   const ref = useRef()
 
   useEffect(()=>{
-    const manager = new WRTCSessionManager({server})
-    manager.on('open', async () => {
-      // const browserId = await VirtualBrowserController.createInstance()
+    const opts = {
+    }
+    const adapter = new turtus.Adapters.WebSocketAdapter(server)
+    const manager = new turtus.P2PManager(opts)
+    manager.setAdapter(adapter)
+
+    adapter.on(turtus.ADAPTER_EVENTS.CONNECTED, async () => {
+      console.log('Websocket connection opened to server')
     })
-    manager.on(EVENT_TYPES.PEER_CONNECT, (peer) => {
+
+    manager.on(turtus.PEER_EVENTS.PEER_CONNECT, (peer) => {
       console.log(`Peer Connected: ${peer.id}`)
     })
     
@@ -57,7 +67,8 @@ export default function(props){
     })
 
     ;(async()=>{
-      await manager.init()
+      const id = await manager.init()
+      console.log('Id:', id)
       console.log('Initialized')
       // setInitialized()
     })()

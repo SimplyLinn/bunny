@@ -18,6 +18,7 @@
     "react-scripts": "3.1.2",
     "serve": "^11.1.0",
     "simple-peer": "^9.6.0",
+    "turtus": "https://github.com/Khauri/turtus-lib",
     "use-resize-observer": "^4.0.0"
   },
   "scripts": {
