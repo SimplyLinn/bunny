@@ -20,7 +20,8 @@ import {
   faUserCircle,
   faCog,
   faPencilAlt,
-  faEdit
+  faEdit,
+  faMoon
 } from '@fortawesome/free-solid-svg-icons'
 
 library.add(
@@ -43,7 +44,8 @@ library.add(
   faUserCircle,
   faCog,
   faPencilAlt,
-  faEdit
+  faEdit,
+  faMoon
 )
 
 export default Icon

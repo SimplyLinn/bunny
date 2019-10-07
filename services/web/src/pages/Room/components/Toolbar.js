@@ -4,6 +4,7 @@ import Icon from '../../../icon-lib'
 
 function ToolbarItem({
   icon,
+  iconProps={},
   disabled = false,
   toggled = false,
   children, 
@@ -19,7 +20,7 @@ function ToolbarItem({
       align="center"
       {...props} >
       { icon 
-        ? <Icon color={disabled ? 'gray' : 'inherit'} icon={icon}/>
+        ? <Icon color={disabled ? 'gray' : 'inherit'} icon={icon} {...iconProps}/>
         : children
       }
     </Box>
@@ -47,7 +48,10 @@ export default function Toolbar(){
           <ToolbarItem disabled icon={'video-slash'}/>
         </Box>
         <Box fill justify="end">
-          <ToolbarItem />
+          <ToolbarItem 
+            onClick={()=>alert('todo: add night mode')}
+            icon={'moon'} 
+            iconProps={{transform:'rotate-230'}}/>
         </Box>
     </Box>
   )

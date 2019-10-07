@@ -49,3 +49,8 @@ export const lightTheme = deepMerge(grommet, {
     }
   }
 })
+
+// TODO
+export const darkTheme = deepMerge(grommet, {
+  global : {}
+})
