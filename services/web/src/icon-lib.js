@@ -15,7 +15,12 @@ import {
   faStopCircle,
   faLaptop,
   faLink,
-  faRobot
+  faRobot,
+  faUsers,
+  faUserCircle,
+  faCog,
+  faPencilAlt,
+  faEdit
 } from '@fortawesome/free-solid-svg-icons'
 
 library.add(
@@ -33,7 +38,12 @@ library.add(
   faStopCircle,
   faLaptop,
   faLink,
-  faRobot
+  faRobot,
+  faUsers,
+  faUserCircle,
+  faCog,
+  faPencilAlt,
+  faEdit
 )
 
 export default Icon

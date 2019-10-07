@@ -1,3 +1,6 @@
+import { grommet } from 'grommet'
+import { deepMerge } from "grommet/utils"
+
 export default {
   dark : {
     name : 'dark',
@@ -20,3 +23,29 @@ export default {
     name : 'light'
   }
 }
+
+export const lightTheme = deepMerge(grommet, {
+  global : {
+    colors : {
+      black : '#1F1F1F',
+      white : '#FFFFFF',
+      accent1 : '#939770',
+      accent2 : '#364432',
+      base : '#f4f6f8',
+      toolbar : 'white',
+      border : '#dadada',
+      header : 'white'
+    },
+    size : {
+      xsmall : '80px'
+    }
+  },
+  tabs : {
+    header : {
+      background : 'header',
+      extend : ()=>({
+        justifyContent : 'space-around'
+      })
+    }
+  }
+})

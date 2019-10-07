@@ -1,16 +1,17 @@
 import React from 'react' 
 import styled from '@emotion/styled'
 
-import Icon from '../../icon-lib'
+import Icon from '../../../icon-lib'
+
 const Container = styled.div`
   display : flex;
   flex-direction : row;
   align-items : center;
   padding : 15px 10px;
   font-family : helvetica, arial;
-  background : ${({theme})=>theme.lighten.x1};
   color : gold;
 `
+
 const ChatHead = styled.div`
   width : 75px;
   height : 75px;

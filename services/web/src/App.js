@@ -1,54 +1,29 @@
 import React from 'react'
-import { ThemeProvider } from 'emotion-theming'
 import { BrowserRouter, Route } from 'react-router-dom'
-import styled from '@emotion/styled'
+import { Box, Grommet } from 'grommet'
 
 import './icon-lib.js'
 import RoomPage from './pages/Room'
 import FullScreen from './components/layouts/FullScreen'
 import ResetCSS from './ResetCSS'
-import theme from './theme'
-import Navbar from './components/Navbar'
+import { lightTheme } from './theme'
 
-const AppContainer = styled.div`
-  width : 100vw;
-  height : 100vh;
-  display : flex;
-  flex-direction : column;
-  background : ${({theme})=>theme.background.primary};
-`
-
-const RouteContainer = styled.div`
-  flex : 1;
-  // order : 0;
-`
-
-const NavbarContainer = styled.div`
-  min-height : 65px;
-  box-sizing : content-box;
-  order : 0;
-  background : ${({theme})=>theme.background.secondary};
-`
-// const webrtcSignalServer = 'wss://10.0.75.1:8443'
 
 function App() {
   // TODO: use mobx to switch themes/preferences
   return (
-    <ThemeProvider theme={theme.dark}>
+    <Grommet theme={lightTheme} >
       <FullScreen>
         <ResetCSS />
         <BrowserRouter>
-          <AppContainer>
-            <NavbarContainer>
-              <Navbar />
-            </NavbarContainer>
-            <RouteContainer>
+          <Box direction="column" width="100vw" height="100vh">
+            <Box fill>
               <Route path="/" exact component={RoomPage} />
-            </RouteContainer>
-          </AppContainer>
+            </Box>
+          </Box>
         </BrowserRouter>
       </FullScreen>
-    </ThemeProvider>
+    </Grommet>
   )
 }
 

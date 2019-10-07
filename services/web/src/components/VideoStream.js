@@ -1,6 +1,8 @@
 import React, { useRef, useState, useEffect } from 'react'
 import AspectRatio from 'react-aspect-ratio'
 import styled from '@emotion/styled'
+import { Box } from 'grommet'
+import Icon from '../icon-lib'
 
 export default function(props){
   const { 
@@ -102,26 +104,62 @@ export default function(props){
   }
   // idea: when vidContainerInner size changes, dynamically change video size too
   return (
-    <AspectRatio ratio={aspectRatio} style={{ maxWidth: '1280px', position:'relative', flex : 1 }}>
-      <>
-      <video ref={ref} autoPlay />
-      <div 
-        tabIndex="0"
-        hidden={!source}
-        className={'click-shield'}
-        ref={controllerRef}
-        onMouseEnter={()=>setFocused(true)}
-        onMouseLeave={()=>setFocused(false)}
-        onWheel={(e)=>onMouseWheel(e)}
-        onKeyDown={onKeyDown}
-        onKeyUp={onKeyUp}
-        onContextMenu={(e)=>onMouseDown(e, 3)}
-        onMouseDown={(e) => onMouseDown(e, 1)}
-        onMouseUp={(e) => onMouseUp(e, 1)}
-        onMouseMove={onMouseMove}
-      />
-      { !source && <div className={'waiting-component'}>{children}</div> }
-      </>
-    </AspectRatio>
+    <Box 
+      fill
+      border="vertical"
+      direction="column">
+      <Box 
+        pad="medium"
+        direction="row"
+        justify="between"
+        align="center"
+        background="header"
+        basis="xxsmall">
+        <Box direction="row" align="center">
+          <b>Untitled Room</b>
+          <Icon style={{margin : 10}} color="lightgrey" icon="pencil-alt" />
+        </Box>
+        <Box 
+          direction='row' 
+          align="center">
+          <Box
+            height="100%"
+            background="accent1"
+            style={{borderRadius:4}}
+            pad="5px 20px">
+            <Icon color="white" icon={'link'}/>
+          </Box>
+        </Box>
+      </Box>
+      <AspectRatio ratio={aspectRatio} style={{ maxWidth: '1280px', position:'relative', flex : 1 }}>
+        <Box style={{position:'relative'}}>
+          <video 
+            width="100%"
+            style={{background:'black'}}
+            ref={ref} 
+            autoPlay />
+          <div 
+            tabIndex="0"
+            hidden={!source}
+            style={{position:'absolute', top : 0, left : 0, bottom : 3, right : 0}}
+            ref={controllerRef}
+            onMouseEnter={()=>setFocused(true)}
+            onMouseLeave={()=>setFocused(false)}
+            onWheel={(e)=>onMouseWheel(e)}
+            onKeyDown={onKeyDown}
+            onKeyUp={onKeyUp}
+            onContextMenu={(e)=>onMouseDown(e, 3)}
+            onMouseDown={(e) => onMouseDown(e, 1)}
+            onMouseUp={(e) => onMouseUp(e, 1)}
+            onMouseMove={onMouseMove}
+          />
+          { !source && 
+            <Box style={{position:'absolute', top : 0, left : 0, bottom : 0, right : 0}}>
+              {children}
+            </Box>
+          }
+        </Box>
+      </AspectRatio>
+    </Box>
   )
 }
