@@ -9,11 +9,13 @@ const opCodes = {
   REQUEST_CONTROL: 0x08,
   RELEASE_CONTROL: 0x09,
 
+
   ERROR: 0xFF
 };
 const list = new Set;
-for(const key in opCodes) {
+for(const key of Object.keys(opCodes)) {
   list.add(opCodes[key]);
 }
 opCodes.list = list;
-module.exports = opCodes;
+
+export default opCodes;

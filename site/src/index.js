@@ -33,7 +33,8 @@ const handleRequest = function(request, response) {
     response.writeHead(200, {'Content-Type': 'application/javascript'});
     response.end(fs.readFileSync('client/keyboard.js'));
   } else {
-    response.writeHead(404).end();
+    response.writeHead(404);
+    response.end();
   }
 };
 

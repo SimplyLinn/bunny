@@ -29,7 +29,7 @@ const defaults = {
   width: '1280',
   height: '720',
   bit_depth: '24',
-  signal_server: 'ws://bunn.is',
+  signal_server: 'ws://bunn.pro',
   firefox_args: ''
 };
 

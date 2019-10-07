@@ -17,21 +17,29 @@ function assertSize(payload, size, maxSize) {
   }
 }
 
+const mouseBtnDown = new Map();
+const keyDown = new Map();
+let activeParser = null;
+
 const instructionRunners = new Map([
   [opCodes.MOUSE_MOVE, function(payload) {
     assertSize(payload, 4);
-    const x = payload.readUInt16BE(0);
-    const y = payload.readUInt16BE(2);
+    const x = Math.round((payload.readUInt16BE(0) / 0xFFFF) * this.wrtcClient.virtualBrowser.width);
+    const y = Math.round((payload.readUInt16BE(2) / 0xFFFF) * this.wrtcClient.virtualBrowser.height);
+    //const x = payload.readUInt16BE(0);
+    //const y = payload.readUInt16BE(2);
     this.xdoin.write(`mousemove ${x} ${y}\n`);
   }],
   [opCodes.MOUSE_BTN_DWN, function(payload) {
     assertSize(payload, 1);
     const btn = payload.readUInt8(0);
+    mouseBtnDown.set(btn, (mouseBtnDown.get(btn) || 0) + 1);
     this.xdoin.write(`mousedown ${btn}\n`);
   }],
   [opCodes.MOUSE_BTN_UP, function(payload) {
     assertSize(payload, 1);
     const btn = payload.readUInt8(0);
+    mouseBtnDown.set(btn, Math.min((mouseBtnDown.get(btn) || 0) - 1, 0));
     this.xdoin.write(`mouseup ${btn}\n`);
   }],
   [opCodes.MOUSE_BTN_CLK, function(payload) {
@@ -42,29 +50,67 @@ const instructionRunners = new Map([
   [opCodes.KEY_DOWN, function(payload) {
     assertSize(payload, 2);
     const key = payload.readUInt16BE(0);
+    keyDown.set(key, (keyDown.get(key) || 0) + 1);
     this.xdoin.write(`keydown 0x${key.toString(16).padStart(4,'0')}\n`);
   }],
   [opCodes.KEY_UP, function(payload) {
     assertSize(payload, 2);
     const key = payload.readUInt16BE(0);
+    keyDown.set(key, Math.min((keyDown.get(key) || 0) - 1, 0));
     this.xdoin.write(`keyup 0x${key.toString(16).padStart(4,'0')}\n`);
   }],
-])
+  [opCodes.REQUEST_CONTROL, function(payload) {
+    assertSize(payload, 0);
+    if(activeParser) activeParser.deactivate();
+    activeParser = this;
+    this.activate();
+  }],
+  [opCodes.RELEASE_CONTROL, function(payload) {
+    assertSize(payload, 0);
+    this.deactivate();
+  }],
+]);
 
 class InstructionParser {
   constructor(peer, wrtcClient) {
     this.peer = peer;
     this.wrtcClient = wrtcClient;
     this.xdoin = wrtcClient.virtualBrowser.xdoin;
-    this.x
+    this.active = false;
   }
 
   runInstruction (op, payload) {
     try {
+      if(!this.active && op !== opCodes.REQUEST_CONTROL) return;
       instructionRunners.get(op).call(this, payload);
     } catch (err) {
       console.error(err);
     }
+  }
+
+  activate() {
+    this.active = true;
+    const inst = Buffer.allocUnsafe(3);
+    inst.writeUInt8(opCodes.REQUEST_CONTROL, 0);
+    inst.writeUInt16BE(0, 1);
+    this.peer.send(inst);
+  }
+
+  deactivate() {
+    this.active = false;
+    if(activeParser === this) activeParser = null;
+    for(const [btn, count] of mouseBtnDown) {
+      for(let i = 0; i < count; i++) this.xdoin.write(`mouseup ${btn}\n`);
+    }
+    mouseBtnDown.clear();
+    for(const [key, count] of keyDown) {
+      for(let i = 0; i < count; i++) this.xdoin.write(`keyup 0x${key.toString(16).padStart(4,'0')}\n`);
+    }
+    keyDown.clear();
+    const inst = Buffer.allocUnsafe(3);
+    inst.writeUInt8(opCodes.RELEASE_CONTROL, 0);
+    inst.writeUInt16BE(0, 1);
+    this.peer.send(inst);
   }
 }
 
@@ -78,6 +124,7 @@ class InstructionReader extends InstructionParser {
     this.payloadPos = 0;
     this.payload = null;
     this.size = null;
+    this.active = false;
   }
 
   /**
@@ -114,7 +161,7 @@ class InstructionReader extends InstructionParser {
   readChunk(chunk) {
     if(this.headerPos !== 3) {
       chunk = this.readHeader(chunk);
-      if(!chunk || !chunk.length) return;
+      if(!chunk) return;
     }
     const bytesToRead = Math.min(chunk.length, this.size - this.payloadPos);
     if(bytesToRead === chunk.length) {

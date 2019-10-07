@@ -167,25 +167,6 @@ function init() {
   const [vidPipe, audPipe] = ffmpeg(this.env, this.width, this.height);
   vidPipe.pipe(this.yuv420p);
   audPipe.pipe(this.audioParser);
-
-  this.input = {
-    mouseMove: (x, y) => {
-      this.xdoin.write(`mousemove ${x} ${y}\n`);
-    },
-    mouseDown: (x, y, btn) => {
-      this.xdoin.write(`mousemove ${x} ${y}\nmousedown ${btn}\n`);
-    },
-    mouseUp: (x, y, btn) => {
-      this.xdoin.write(`mousemove ${x} ${y}\nmouseup ${btn}\n`);
-    },
-    keyDown: (key) => {
-      console.log(`'${keyRemapper(key).replace(/'/g,'\\\'')}'`)
-      this.xdoin.write(`keydown '${keyRemapper(key).replace(/'/g,'\\\'')}'\n`);
-    },
-    keyUp: (key) => {
-      this.xdoin.write(`keyup '${keyRemapper(key).replace(/'/g,'\\\'')}'\n`);
-    }
-  }
 }
 
 class VirtualBrowser {
