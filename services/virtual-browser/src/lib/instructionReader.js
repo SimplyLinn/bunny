@@ -94,7 +94,7 @@ export default class InstructionReader {
   readChunk(chunk) {
     if(this.headerPos !== 3) {
       chunk = this.readHeader(chunk);
-      if(!chunk || !chunk.length) return;
+      if(!chunk) return;
     }
     const bytesToRead = Math.min(chunk.length, this.size - this.payloadPos);
     if(bytesToRead === chunk.length) {
