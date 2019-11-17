@@ -31,7 +31,7 @@ function prepareVideoListeners() {
     e.stopPropagation();
   });
   video.addEventListener('contextmenu', this.videoListeners.contextmenu = e => {
-    e.preventDefault();
+    if(this.vidFocus) e.preventDefault();
   });
   video.addEventListener('click', this.videoListeners.click = e => {
     const inst = new InstructionBuffer(opCodes.REQUEST_CONTROL, 0);

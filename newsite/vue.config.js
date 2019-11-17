@@ -8,7 +8,12 @@ module.exports = {
           parser: {amd: false}
         }
       ]
-    },/*
+    },
+    devServer: {
+      allowedHosts: [
+        'opposite.biz'
+      ]
+    }/*
     plugins: [
       new webpack.ProvidePlugin({
         i18next: 'i18next',
