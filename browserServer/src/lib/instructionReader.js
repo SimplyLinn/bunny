@@ -24,6 +24,7 @@ let activeParser = null;
 const instructionRunners = new Map([
   [opCodes.MOUSE_MOVE, function(payload) {
     assertSize(payload, 4);
+    if(!this.active) return;
     const x = Math.round((payload.readUInt16BE(0) / 0xFFFF) * this.wrtcClient.virtualBrowser.width);
     const y = Math.round((payload.readUInt16BE(2) / 0xFFFF) * this.wrtcClient.virtualBrowser.height);
     //const x = payload.readUInt16BE(0);
@@ -32,30 +33,37 @@ const instructionRunners = new Map([
   }],
   [opCodes.MOUSE_BTN_DWN, function(payload) {
     assertSize(payload, 1);
+    if(!this.active) return;
     const btn = payload.readUInt8(0);
     mouseBtnDown.set(btn, (mouseBtnDown.get(btn) || 0) + 1);
     this.xdoin.write(`mousedown ${btn}\n`);
   }],
   [opCodes.MOUSE_BTN_UP, function(payload) {
     assertSize(payload, 1);
+    if(!this.active) return;
     const btn = payload.readUInt8(0);
+    if ((mouseBtnDown.get(btn) || 0) <= 0) return;
     mouseBtnDown.set(btn, Math.min((mouseBtnDown.get(btn) || 0) - 1, 0));
     this.xdoin.write(`mouseup ${btn}\n`);
   }],
   [opCodes.MOUSE_BTN_CLK, function(payload) {
     assertSize(payload, 1);
+    if(!this.active) return;
     const btn = payload.readUInt8(0);
     this.xdoin.write(`click ${btn}\n`);
   }],
   [opCodes.KEY_DOWN, function(payload) {
     assertSize(payload, 2);
+    if(!this.active) return;
     const key = payload.readUInt16BE(0);
     keyDown.set(key, (keyDown.get(key) || 0) + 1);
     this.xdoin.write(`keydown 0x${key.toString(16).padStart(4,'0')}\n`);
   }],
   [opCodes.KEY_UP, function(payload) {
     assertSize(payload, 2);
+    if(!this.active) return;
     const key = payload.readUInt16BE(0);
+    if ((keyDown.get(key) || 0) <= 0) return;
     keyDown.set(key, Math.min((keyDown.get(key) || 0) - 1, 0));
     this.xdoin.write(`keyup 0x${key.toString(16).padStart(4,'0')}\n`);
   }],
@@ -67,7 +75,12 @@ const instructionRunners = new Map([
   }],
   [opCodes.RELEASE_CONTROL, function(payload) {
     assertSize(payload, 0);
+    if(!this.active) return;
     this.deactivate();
+  }],
+  [opCodes.RESYNC, function(payload) {
+    assertSize(payload, 0);
+    this.resync();
   }],
 ]);
 
@@ -81,7 +94,6 @@ class InstructionParser {
 
   runInstruction (op, payload) {
     try {
-      if(!this.active && op !== opCodes.REQUEST_CONTROL) return;
       instructionRunners.get(op).call(this, payload);
     } catch (err) {
       console.error(err);
@@ -111,6 +123,10 @@ class InstructionParser {
     inst.writeUInt8(opCodes.RELEASE_CONTROL, 0);
     inst.writeUInt16BE(0, 1);
     this.peer.send(inst);
+  }
+
+  resync() {
+    this.wrtcClient.virtualBrowser.addStream(this.peer);
   }
 }
 

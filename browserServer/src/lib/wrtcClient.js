@@ -46,7 +46,7 @@ class WrtcClient {
   newClient(msg, initiator) {
     console.log(msg, initiator);
     const peer = new Peer({ wrtc: wrtc, initiator });
-    peer.addStream(this.virtualBrowser.getStream(peer));
+    this.virtualBrowser.addStream(peer);
     peer.cid = msg.cid;
     this.peers.set(peer.cid, peer);
     peer.on('error', (err) => {

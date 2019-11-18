@@ -5,7 +5,7 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node .",
-    "dev": "docker build -t browser-server . && docker run --rm -it --net=host --shm-size=\"1gb\" browser-server -s \"wss://192.168.10.166:8443\"",
+    "dev": "docker build -t browser-server . && docker run --rm -it --net=host --shm-size=\"1gb\" browser-server -s \"wss://bunn.pro:8443\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

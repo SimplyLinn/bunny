@@ -1,10 +1,11 @@
 const { RTCVideoSource, RTCAudioSource } = require('wrtc').nonstandard;
 const { MediaStream } = require('wrtc');
-const FfmpegCommand = require('fluent-ffmpeg');
 const { spawn, exec } = require('child_process');
 
 const Yuv420pParser = require('./yuv420pParser');
 const AudioParser = require('./audioParser');
+
+const STREAM = Symbol('mediaStream');
 
 function keyRemapper(key) {
   switch(key) {
@@ -157,13 +158,21 @@ function ffmpeg(env, width, height) {
   return [vidPipe, audPipe];
 }
 
+function createXdotool() {
+  const xdotoolProc = xdotool(this.env);
+  this.xdoin = xdotoolProc.stdin;
+  xdotoolProc.once('close', ()=>{
+    createXdotool.call(this);
+  });
+}
+
 function init() {
   dbus(this.env);
   xvfb(this.env, this.width, this.height, this.bitDepth);
   pulseaudio(this.env);
   openbox(this.env);
   firefox(this.env, this.width, this.height);
-  this.xdoin = xdotool(this.env).stdin;
+  createXdotool.call(this);
   const [vidPipe, audPipe] = ffmpeg(this.env, this.width, this.height);
   vidPipe.pipe(this.yuv420p);
   audPipe.pipe(this.audioParser);
@@ -176,7 +185,7 @@ class VirtualBrowser {
     const videoFrame = { width, height, data: null };
     const audioData = { sampleRate: 44100, channelCount: 2, samples: null };
 
-    this.audSources = new Set;
+    this.audSources = new Map;
 
     this.width = width;
     this.height = height;
@@ -204,16 +213,30 @@ class VirtualBrowser {
     init.call(this);
   }
 
-  getStream(peer) {
+  stopStream(peer) {
+    if (peer[STREAM]) {
+      const stream = peer[STREAM];
+      const tracks = stream.getTracks();
+      for(const track of tracks) {
+        if (this.audSources.has(track)) {
+          this.audSources.delete(track);
+          track.stop();
+        }
+        stream.removeTrack(track);
+      }
+      delete peer[STREAM];
+    }
+  }
+
+  addStream(peer) {
     const audSource = new RTCAudioSource();
-    this.audSources.add(audSource);
+    this.stopStream(peer);
     const audTrack = audSource.createTrack();
+    this.audSources.set(audTrack, audSource);
     const ms = new MediaStream([this.vidTrack, audTrack]);
-    peer.on('close', () => {
-      this.audSources.delete(audSource);
-      audTrack.stop();
-    });
-    return ms;
+    peer.on('close', () => this.stopStream(peer));
+    peer[STREAM] = ms;
+    peer.addStream(ms);
   }
 }
 

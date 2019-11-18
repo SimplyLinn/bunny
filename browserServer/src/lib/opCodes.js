@@ -8,8 +8,9 @@ const opCodes = {
   KEY_UP: 0x07,
   REQUEST_CONTROL: 0x08,
   RELEASE_CONTROL: 0x09,
+  RESYNC: 0x0A,
 
-  ERROR: 0xFF
+  ERROR: 0xFF,
 };
 const list = new Set;
 for(const key in opCodes) {
