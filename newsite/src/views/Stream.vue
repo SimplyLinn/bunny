@@ -2,6 +2,7 @@
   <div class="about">
     <video id="remoteVideo" :class="{focus:vidFocus}" ref="video" autoplay></video>
     <textarea id="dummyInput" ref="input" style="position: absolute; left: -9999px"></textarea>
+    <button type="button" @click="resync">Resync audio/video</button>
   </div>
 </template>
 
@@ -173,6 +174,10 @@ export default {
         });
       })
       return newPeer;
+    },
+    resync() {
+      const inst = new InstructionBuffer(opCodes.RESYNC, 0);
+      this.sendCommand(inst.arrayBuffer);
     },
     processSignal(data) {
       if(this.peers.has(data.cid)) return this.peers.get(data.cid).signal(data.signal);
