@@ -12,7 +12,7 @@
     "bootstrap": "^4.3.1",
     "bootstrap-vue": "^2.0.0-rc.28",
     "core-js": "^2.6.5",
-    "jquery": "^1.9.1",
+    "jquery": "^3.5.0",
     "sass": "^1.22.10",
     "sass-loader": "^7.3.1",
     "simple-peer": "^9.5.0",
